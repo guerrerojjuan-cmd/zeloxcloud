@@ -1,0 +1,6 @@
+{
+  "name": "ZeloxCloud",
+  "description": "Ecosistema de comunicación y pedidos en tiempo real para comercios locales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
