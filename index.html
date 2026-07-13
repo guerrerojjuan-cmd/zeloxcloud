@@ -1,1 +1,1199 @@
 
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZeloxCloud - Local Hub SaaS</title>
+    
+    <!-- PWA & Mobile Web Capabilities -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#09090b">
+    <link rel="apple-touch-icon" href="ZELOX_CLOUD.jpeg">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React & ReactDOM (UMD) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #09090b;
+            background-image: radial-gradient(circle at 50% 30%, rgba(197, 160, 89, 0.08) 0%, rgba(9, 9, 11, 1) 75%);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #09090b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5a059;
+            border-radius: 3px;
+        }
+        .gold-glow {
+            box-shadow: 0 0 25px rgba(197, 160, 89, 0.15);
+        }
+        .bg-app-overlay {
+            background-image: url('Gemini_Generated_Image_u1fzwuu1fzwuu1fz_2.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.04;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        button, select, input, textarea {
+            min-height: 44px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen relative overflow-x-hidden">
+
+    <div class="bg-app-overlay"></div>
+
+    <div id="root" class="relative z-10"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Base de Datos Real alineada 1:1 con Google Sheets
+        const defaultMerchants = [
+            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "dfc_cloud1@zeloxcloud.com", Contrasena: "DfCc1Oud1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
+            { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620" },
+            { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620" },
+            { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000" },
+            { ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre: "Tacos y Gorditas Doña Blanca", Usuario: "tacos_y_gorditas_dona_blanca1@zeloxcloud.com", Contrasena: "T4c0sYg01", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TGB-202", Facebook_Page_ID: "donablanca", Instagram: "@tacos_donablanca", FotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Blanca", Telefono: "8110000001" },
+            { ID_Comercio: "tacos-don-lupe", Nombre: "Tacos Don Lupe", Usuario: "tacos_don_lupe1@zeloxcloud.com", Contrasena: "T4c0sD0n1", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TDL-303", Facebook_Page_ID: "tacosdonlupe", Instagram: "@tacos_donlupe", FotoUrl: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lupe", Telefono: "8110000002" },
+            { ID_Comercio: "abarrotes-lara", Nombre: "Abarrotes Lara", Usuario: "abarrotes_lara1@zeloxcloud.com", Contrasena: "Ug8Uq9G2", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABL-404", Facebook_Page_ID: "abarroteslara", Instagram: "@abarrotes_lara", FotoUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lara", Telefono: "8110000003" },
+            { ID_Comercio: "abarrotes-guerrero", Nombre: "Abarrotes Guerrero", Usuario: "abarrotes_guerrero1@zeloxcloud.com", Contrasena: "Na4Na0H3", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABG-505", Facebook_Page_ID: "abarrotesguerrero", Instagram: "@abarrotes_guerrero", FotoUrl: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Guerrero", Telefono: "8110000004" }
+        ];
+
+        const defaultProducts = [
+            { ID_Producto: "p1", ID_Comercio: "dfc-cloud", Nombre_Producto: "Asesoría Contable Mensual", Precio: 1500, Descripcion: "Declaración de impuestos, contabilidad electrónica y consultoría fiscal integral de excelencia.", Imagen: "💼" },
+            { ID_Producto: "p2", ID_Comercio: "dfc-cloud", Nombre_Producto: "Auditoría Fiscal Preventiva", Precio: 3500, Descripcion: "Revisión integral de obligaciones y estatus fiscal frente al SAT para mitigar riesgos.", Imagen: "🔍" },
+            { ID_Producto: "p3", ID_Comercio: "dfc-copiloto", Nombre_Producto: "Membresía Copiloto Mensual", Precio: 499, Descripcion: "Acceso ilimitado mensual a nuestro ecosistema contable automatizado.", Imagen: "🚀" },
+            { ID_Producto: "p4", ID_Comercio: "dfc-copiloto", Nombre_Producto: "Membresía Copiloto Anual", Precio: 4999, Descripcion: "Ahorra y asegura tu control de procesos fiscales y facturación todo el año.", Imagen: "📅" },
+            { ID_Producto: "p5", ID_Comercio: "dfc-zeloxcloud", Nombre_Producto: "Membresía ZeloxCloud Mensual", Precio: 599, Descripcion: "Plataforma de logística, menú y control automatizado de redes para tu comercio.", Imagen: "☁️" },
+            { ID_Producto: "p6", ID_Comercio: "salsas-la-carajita", Nombre_Producto: "Salsa Habanera Artesanal (250ml)", Precio: 85, Descripcion: "Salsa picante premium elaborada con habaneros tatemados y especias selectas.", Imagen: "🌶️" },
+            { ID_Producto: "p7", ID_Comercio: "salsas-la-carajita", Nombre_Producto: "Salsa Chipotle Cremosa", Precio: 80, Descripcion: "Exquisita combinación de chipotles ahumados con una textura suave ideal para cortes.", Imagen: "🥣" },
+            { ID_Producto: "p8", ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre_Producto: "Orden de Tacos de Guisado (4 pzs)", Precio: 90, Descripcion: "Deliciosos tacos de harina o maíz con guisados caseros a elegir.", Imagen: "🌮" },
+            { ID_Producto: "p9", ID_Comercio: "tacos-don-lupe", Nombre_Producto: "Tacos de Trompo al Pastor", Precio: 85, Descripcion: "Doble tortilla, piña, cilantro, cebolla y la receta secreta de la casa.", Imagen: "🌮" },
+            { ID_Producto: "p10", ID_Comercio: "abarrotes-lara", Nombre_Producto: "Cartera de Huevo Blanco (30 pzs)", Precio: 88, Descripcion: "Huevo fresco seleccionado de la mejor calidad.", Imagen: "🥚" }
+        ];
+
+        // Web Audio chime generator for order notifications
+        const playChime = () => {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                const ctx = new AudioContext();
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(523.25, ctx.currentTime);
+                gain1.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain1.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start();
+                osc1.stop(ctx.currentTime + 0.3);
+            } catch (e) {
+                console.log("Audio contextual alert pending user tap.", e);
+            }
+        };
+
+        // Vectorial fallback logo component
+        function BrandLogo({ className = "w-11 h-11" }) {
+            const [hasError, setHasError] = useState(false);
+            if (hasError) {
+                return (
+                    <div className={`${className} bg-slate-900 border border-amber-500/30 rounded-xl flex items-center justify-center p-1.5 shadow-lg relative`}>
+                        <svg viewBox="0 0 100 100" className="w-full h-full text-amber-500" fill="currentColor">
+                            <path d="M50 15 C38 15 32 25 38 35 C28 38 28 52 38 55 C42 55 72 55 75 51 C82 48 80 35 70 35 C68 25 58 15 50 15 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                            <path d="M42 45 L50 35 L58 45" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                            <path d="M50 35 L50 65" fill="none" stroke="currentColor" strokeWidth="6" />
+                        </svg>
+                    </div>
+                );
+            }
+            return (
+                <img 
+                    src="ZELOX_CLOUD.jpeg" 
+                    alt="Logo" 
+                    className={`${className} rounded-xl object-cover border border-amber-500/30`}
+                    onError={() => setHasError(true)}
+                />
+            );
+        }
+
+        // Main App State
+        function ZeloxCloudApp() {
+            const [merchants, setMerchants] = useState(() => {
+                const stored = localStorage.getItem("zc_merchants_production_v9");
+                return stored ? JSON.parse(stored) : defaultMerchants;
+            });
+            const [products, setProducts] = useState(() => {
+                const stored = localStorage.getItem("zc_products_production_v9");
+                return stored ? JSON.parse(stored) : defaultProducts;
+            });
+            const [orders, setOrders] = useState(() => {
+                const stored = localStorage.getItem("zc_orders_production_v9");
+                return stored ? JSON.parse(stored) : [];
+            });
+
+            const [view, setView] = useState('login');
+            const [loggedUser, setLoggedUser] = useState(null);
+            const [currentShopId, setCurrentShopId] = useState('dfc-cloud');
+            const [activeMerchantTab, setActiveMerchantTab] = useState('pedidos');
+            const [activeAdminTab, setActiveAdminTab] = useState('comercios');
+
+            const [loginEmail, setLoginEmail] = useState('');
+            const [loginPass, setLoginPass] = useState('');
+            const [loginError, setLoginError] = useState('');
+            const [showBlockedScreen, setShowBlockedScreen] = useState(false);
+            const [blockedMerchantName, setBlockedMerchantName] = useState('');
+            const [promoIdea, setPromoIdea] = useState('');
+
+            // Filters
+            const [filterMerchant, setFilterMerchant] = useState('todos');
+            const [filterPayment, setFilterPayment] = useState('todos');
+
+            // Modals
+            const [showNewMerchantModal, setShowNewMerchantModal] = useState(false);
+            const [newMerchant, setNewMerchant] = useState({
+                Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
+                WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
+                Usuario: '', Contrasena: '', FotoUrl: ''
+            });
+            const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
+
+            // Cart
+            const [cart, setCart] = useState({});
+            const [deliveryAddress, setDeliveryAddress] = useState('');
+            const [tipPercent, setTipPercent] = useState(10);
+            const [customTip, setCustomTip] = useState('');
+            const [paymentMethod, setPaymentMethod] = useState('Efectivo');
+            const [cashAmount, setCashAmount] = useState('');
+            const [orderConfirmedModal, setOrderConfirmedModal] = useState(false);
+            const [lastPlacedOrder, setLastPlacedOrder] = useState(null);
+
+            const [webhookLog, setWebhookLog] = useState([]);
+            const [notificationToast, setNotificationToast] = useState(null);
+
+            useEffect(() => {
+                localStorage.setItem("zc_merchants_production_v9", JSON.stringify(merchants));
+            }, [merchants]);
+            useEffect(() => {
+                localStorage.setItem("zc_products_production_v9", JSON.stringify(products));
+            }, [products]);
+            useEffect(() => {
+                localStorage.setItem("zc_orders_production_v9", JSON.stringify(orders));
+            }, [orders]);
+
+            // Sync channel between tabs for real-time sound/popups
+            useEffect(() => {
+                const handleStorageChange = (e) => {
+                    if (e.key === "zc_orders_production_v9") {
+                        const updated = JSON.parse(e.newValue);
+                        if (updated.length > orders.length) {
+                            playChime();
+                            showToast("🔔 ¡Se ha recibido un nuevo pedido en la red ZeloxCloud!");
+                        }
+                        setOrders(updated);
+                    }
+                };
+                window.addEventListener("storage", handleStorageChange);
+                return () => window.removeEventListener("storage", handleStorageChange);
+            }, [orders]);
+
+            // Direct route handler for ?shop=id-comercio
+            useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                const shopParam = params.get('shop');
+                if (shopParam) {
+                    const exists = merchants.some(m => m.ID_Comercio === shopParam);
+                    if (exists) {
+                        setCurrentShopId(shopParam);
+                        setView('shop');
+                        showToast(`🏪 Cargando Tienda Digital: ${shopParam}`);
+                    }
+                }
+            }, [merchants]);
+
+            const showToast = (message) => {
+                setNotificationToast(message);
+                setTimeout(() => setNotificationToast(null), 4000);
+            };
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                setLoginError('');
+                const email = loginEmail.trim();
+                const pass = loginPass.trim();
+
+                if (email === "juan.guerrero@zeloxcloud.com" && pass === "Dfc2016") {
+                    setLoggedUser({ email, role: 'super_admin' });
+                    setView('super_admin');
+                    showToast("🔓 Acceso de Super Administrador Autorizado");
+                    return;
+                }
+
+                const merchant = merchants.find(m => m.Usuario === email && m.Contrasena === pass);
+                if (merchant) {
+                    if (merchant.Estatus === "Suspendido" || merchant.Estatus === "suspendido") {
+                        setBlockedMerchantName(merchant.Nombre);
+                        setShowBlockedScreen(true);
+                        return;
+                    }
+                    setLoggedUser({ email, role: 'merchant', merchantId: merchant.ID_Comercio });
+                    setView('merchant');
+                    setActiveMerchantTab('pedidos');
+                    showToast(`💼 Panel de Control Iniciado: ${merchant.Nombre}`);
+                    return;
+                }
+                setLoginError('Credenciales incorrectas. Verifique e intente de nuevo.');
+            };
+
+            const handleLogout = () => {
+                setLoggedUser(null);
+                setView('login');
+                setLoginEmail('');
+                setLoginPass('');
+            };
+
+            // Super Admin: Register new client
+            const createMerchant = (e) => {
+                e.preventDefault();
+                if (!newMerchant.Nombre || !newMerchant.Contacto || !newMerchant.Usuario || !newMerchant.Contrasena) {
+                    showToast("⚠️ Complete todos los campos requeridos.");
+                    return;
+                }
+                const slug = newMerchant.Nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+                const formatted = {
+                    ...newMerchant,
+                    ID_Comercio: slug,
+                    Estatus: "Al corriente",
+                    FotoUrl: newMerchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
+                };
+                const updated = [...merchants, formatted];
+                setMerchants(updated);
+                setShowNewMerchantModal(false);
+                setNewMerchant({
+                    Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
+                    WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
+                    Usuario: '', Contrasena: '', FotoUrl: ''
+                });
+
+                const syncLog = { event: "merchant_created", ID_Comercio: slug, Nombre: formatted.Nombre, timestamp: new Date().toISOString() };
+                setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
+                showToast(`🚀 Comercio "${formatted.Nombre}" registrado exitosamente`);
+            };
+
+            const toggleMerchantStatus = (id, currentStatus) => {
+                const nextStatus = currentStatus === "Al corriente" || currentStatus === "activo" ? "Suspendido" : "Al corriente";
+                const updated = merchants.map(m => m.ID_Comercio === id ? { ...m, Estatus: nextStatus } : m);
+                setMerchants(updated);
+                showToast(`Estado de licencia de ${id} actualizado a: ${nextStatus}`);
+            };
+
+            const deleteMerchant = (id) => {
+                if (confirm("¿Deseas eliminar definitivamente este comercio de la red ZeloxCloud?")) {
+                    setMerchants(merchants.filter(m => m.ID_Comercio !== id));
+                    showToast("❌ Registro de comercio removido.");
+                }
+            };
+
+            // Merchant Catalog Management
+            const handleAddProduct = (e) => {
+                e.preventDefault();
+                if (!newProduct.Nombre_Producto || !newProduct.Precio) return;
+                const prod = {
+                    ID_Producto: 'p-' + Date.now(),
+                    ID_Comercio: loggedUser.merchantId,
+                    Nombre_Producto: newProduct.Nombre_Producto,
+                    Precio: parseFloat(newProduct.Precio),
+                    Descripcion: newProduct.Descripcion,
+                    Imagen: newProduct.Imagen
+                };
+                setProducts([...products, prod]);
+                setNewProduct({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
+                showToast("✅ Producto añadido al catálogo comercial");
+            };
+
+            const deleteProduct = (id) => {
+                setProducts(products.filter(p => p.ID_Producto !== id));
+                showToast("🗑️ Producto eliminado");
+            };
+
+            const advanceOrderState = (orderId) => {
+                setOrders(orders.map(o => {
+                    if (o.ID_Orden === orderId) {
+                        return { ...o, Estado: o.Estado === "Nuevo" ? "En Ruta" : "Entregado" };
+                    }
+                    return o;
+                }));
+                showToast("📦 Estado operativo del pedido actualizado");
+            };
+
+            // Marketing Campaign with AI and GSheets webhook trigger
+            const runAiAdvertising = (merchant) => {
+                if (!promoIdea.trim()) {
+                    alert("⚠️ Ingrese una idea comercial o promoción del día.");
+                    return;
+                }
+                showToast("🤖 Generando copy y estructura con ZeloxCloud IA...");
+                setTimeout(() => {
+                    const generatedAdText = `📢 ¡OFERTA LIMITADA DE ${merchant.Nombre.toUpperCase()}! 🌟
+💡 PROPUESTA: ${promoIdea}
+
+🛒 ¡Haz tu pedido digital hoy mismo!:
+🔗 ${window.location.origin}${window.location.pathname}?shop=${merchant.ID_Comercio}
+
+📞 Contacto: ${merchant.Telefono}
+🤖 Campaña inteligente distribuida mediante Webhook de Make a tus redes vinculadas.`;
+
+                    alert(`🤖 ZeloxCloud IA Publicitaria:\n\nSe ha disparado tu campaña publicitaria con éxito:\n\n${generatedAdText}`);
+                    
+                    const payloadLog = {
+                        action: "AI_Autonomous_Ad",
+                        merchantId: merchant.ID_Comercio,
+                        ideaCaptured: promoIdea,
+                        whatsappGroupId: merchant.WhatsApp_Group_ID,
+                        facebookPageId: merchant.Facebook_Page_ID,
+                        generatedAdCopy: generatedAdText,
+                        timestamp: new Date().toISOString()
+                    };
+                    setWebhookLog(prev => [JSON.stringify(payloadLog, null, 2), ...prev]);
+                    setPromoIdea('');
+                }, 1000);
+            };
+
+            // Shopping Cart Logic
+            const addToCart = (prod) => {
+                setCart(prev => {
+                    const currentQty = prev[prod.ID_Producto]?.qty || 0;
+                    return { ...prev, [prod.ID_Producto]: { ...prod, qty: currentQty + 1 } };
+                });
+            };
+            const removeFromCart = (prodId) => {
+                setCart(prev => {
+                    const copy = { ...prev };
+                    if (!copy[prodId]) return prev;
+                    if (copy[prodId].qty <= 1) delete copy[prodId];
+                    else copy[prodId].qty -= 1;
+                    return copy;
+                });
+            };
+
+            const cartTotal = Object.values(cart).reduce((sum, item) => sum + (item.Precio * item.qty), 0);
+            const deliveryFee = cartTotal > 0 ? 30 : 0;
+            const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
+            const finalTotal = cartTotal + deliveryFee + currentTipVal;
+
+            const handlePlaceOrder = (merchant) => {
+                if (!deliveryAddress.trim()) {
+                    alert("⚠️ La dirección de entrega es obligatoria.");
+                    return;
+                }
+                if (paymentMethod === "Efectivo") {
+                    const cash = parseFloat(cashAmount);
+                    if (isNaN(cash) || cash < finalTotal) {
+                        alert(`⚠️ Ingrese un monto de efectivo válido para liquidar $${finalTotal.toFixed(2)} MXN.`);
+                        return;
+                    }
+                }
+
+                const orderObj = {
+                    ID_Orden: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+                    ID_Comercio: merchant.ID_Comercio,
+                    Cliente: "Cliente Digital DFC",
+                    Direccion: deliveryAddress,
+                    Detalle_Productos: Object.values(cart).map(i => `${i.qty}x ${i.Nombre_Producto}`).join(", "),
+                    Total: Math.round(finalTotal),
+                    Metodo_Pago: paymentMethod,
+                    Cambio: paymentMethod === "Efectivo" ? (parseFloat(cashAmount) - finalTotal) : 0,
+                    Propina: Math.round(currentTipVal),
+                    Envio: deliveryFee,
+                    Estado: "Nuevo",
+                    Timestamp: "Justo ahora"
+                };
+
+                const updatedOrders = [orderObj, ...orders];
+                setOrders(updatedOrders);
+                localStorage.setItem("zc_orders_production_v9", JSON.stringify(updatedOrders));
+
+                const makePayload = {
+                    event: "new_order",
+                    ID_Comercio: merchant.ID_Comercio,
+                    Nombre_Comercio: merchant.Nombre,
+                    ID_Orden: orderObj.ID_Orden,
+                    Cliente: orderObj.Cliente,
+                    Direccion: orderObj.Direccion,
+                    Detalle_Productos: orderObj.Detalle_Productos,
+                    Total: orderObj.Total,
+                    Metodo_Pago: orderObj.Metodo_Pago,
+                    Cambio: orderObj.Cambio,
+                    WhatsApp_Group_ID: merchant.WhatsApp_Group_ID,
+                    Facebook_Page_ID: merchant.Facebook_Page_ID
+                };
+                setWebhookLog(prev => [JSON.stringify(makePayload, null, 2), ...prev]);
+
+                setLastPlacedOrder(orderObj);
+                setOrderConfirmedModal(true);
+                setCart({});
+                setDeliveryAddress('');
+                setCashAmount('');
+            };
+
+            const filteredOrders = orders.filter(o => {
+                const matchMerchant = filterMerchant === 'todos' || o.ID_Comercio === filterMerchant;
+                const matchPayment = filterPayment === 'todos' || o.Metodo_Pago === filterPayment;
+                return matchMerchant && matchPayment;
+            });
+
+            const totalRevenue = filteredOrders.reduce((sum, o) => sum + o.Total, 0);
+            const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
+            const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
+
+            const activeMerchantContext = merchants.find(m => m.ID_Comercio === currentShopId) || merchants[0];
+            const dynamicStoreLink = `${window.location.origin}${window.location.pathname}?shop=${activeMerchantContext.ID_Comercio}`;
+
+            return (
+                <div class="flex flex-col min-h-screen justify-between relative">
+                    {notificationToast && (
+                        <div class="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200">
+                            <i class="fa-solid fa-bell"></i>
+                            <span>{notificationToast}</span>
+                        </div>
+                    )}
+
+                    <header class="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                        <div class="flex items-center gap-3.5">
+                            <BrandLogo className="w-11 h-11" />
+                            <div>
+                                <h1 class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                                    ZeloxCloud <span class="text-xs bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">Local Hub</span>
+                                </h1>
+                                <p class="text-xs text-slate-400">Automatización Comercial Inteligente por DFC</p>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-3 md:gap-4">
+                            {loggedUser ? (
+                                <div class="flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
+                                    <span class="text-xs text-slate-300">
+                                        <i class="fa-solid fa-circle-user text-amber-500 mr-2"></i>
+                                        {loggedUser.email}
+                                    </span>
+                                    <button onClick={handleLogout} class="bg-red-500/10 hover:bg-red-500 text-red-400 px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
+                                        <i class="fa-solid fa-power-off mr-1.5"></i> Salir
+                                    </button>
+                                </div>
+                            ) : (
+                                view !== 'login' && (
+                                    <button onClick={() => setView('login')} class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                                        <i class="fa-solid fa-lock mr-1.5"></i> Panel Privado
+                                    </button>
+                                )
+                            )}
+
+                            <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
+                                <span class="px-2 text-slate-400">Ver tienda:</span>
+                                {merchants.map(m => (
+                                    <button 
+                                        key={m.ID_Comercio}
+                                        onClick={() => { setCurrentShopId(m.ID_Comercio); setView('shop'); }}
+                                        class={`px-2 py-1 rounded transition ${currentShopId === m.ID_Comercio && view === 'shop' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800 text-slate-300'}`}
+                                    >
+                                        {m.Nombre.split(' ')[0]}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </header>
+
+                    <main class="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
+                        {view === 'login' && (
+                            <div class="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
+                                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
+                                <div class="text-center mb-8">
+                                    <BrandLogo className="w-16 h-16 rounded-full mx-auto mb-4" />
+                                    <h2 class="text-2xl font-black text-white">Ingreso de Personal</h2>
+                                    <p class="text-xs text-slate-400 mt-1">Ecosistema contable y logístico ZeloxCloud SaaS</p>
+                                </div>
+
+                                {loginError && (
+                                    <div class="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg mb-6 flex items-center gap-2">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                        <span>{loginError}</span>
+                                    </div>
+                                )}
+
+                                <form onSubmit={handleLogin} class="space-y-4" autoComplete="off">
+                                    <div>
+                                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico</label>
+                                        <input 
+                                            type="email" placeholder="Ingresa tu correo" value={loginEmail}
+                                            onChange={(e) => setLoginEmail(e.target.value)}
+                                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            autoComplete="new-password" required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Contraseña</label>
+                                        <input 
+                                            type="password" placeholder="Ingresa tu contraseña" value={loginPass}
+                                            onChange={(e) => setLoginPass(e.target.value)}
+                                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            autoComplete="new-password" required
+                                        />
+                                    </div>
+                                    <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg transition mt-4">
+                                        Iniciar Sesión
+                                    </button>
+                                </form>
+                            </div>
+                        )}
+
+                        {showBlockedScreen && (
+                            <div class="max-w-lg mx-auto my-12 bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative">
+                                <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                                    <i class="fa-solid fa-ban"></i>
+                                </div>
+                                <h2 class="text-2xl font-black text-red-400">SERVICIO SUSPENDIDO</h2>
+                                <h3 class="text-lg font-bold text-white mt-2">{blockedMerchantName}</h3>
+                                <p class="text-slate-400 mt-4 text-sm leading-relaxed">
+                                    El acceso al panel y el menú digital para este comercio han sido desactivados debido a la falta de pago de la membresía.
+                                </p>
+                                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 my-6 text-left space-y-2 text-xs">
+                                    <p class="text-slate-400 font-bold uppercase tracking-wider">Contacto de Reactivación DFC:</p>
+                                    <p class="text-slate-200"><i class="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
+                                    <p class="text-slate-200"><i class="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
+                                </div>
+                                <button onClick={() => setShowBlockedScreen(false)} class="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold">
+                                    Cerrar Ventana
+                                </button>
+                            </div>
+                        )}
+
+                        {view === 'super_admin' && (
+                            <div>
+                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                    <div>
+                                        <div class="flex items-center gap-3">
+                                            <span class="text-xs bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider">SUPER-ADMIN</span>
+                                            <h2 class="text-3xl font-black text-white">Consola de Control Juan Guerrero</h2>
+                                        </div>
+                                        <p class="text-sm text-slate-400 mt-1">Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
+                                    </div>
+                                    <button onClick={() => setShowNewMerchantModal(true)} class="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
+                                        <i class="fa-solid fa-plus-circle text-lg"></i> Registrar Comercio
+                                    </button>
+                                </div>
+
+                                <div class="flex flex-wrap gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                    <button onClick={() => setActiveAdminTab('comercios')} class={`pb-3 px-4 transition ${activeAdminTab === 'comercios' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i class="fa-solid fa-store mr-2"></i> Directorio de Clientes ({merchants.length})
+                                    </button>
+                                    <button onClick={() => setActiveAdminTab('ordenes_globales')} class={`pb-3 px-4 transition ${activeAdminTab === 'ordenes_globales' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i class="fa-solid fa-chart-line mr-2"></i> Órdenes Globales & Reportes
+                                    </button>
+                                    <button onClick={() => setActiveAdminTab('db')} class={`pb-3 px-4 transition ${activeAdminTab === 'db' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i class="fa-solid fa-database mr-2"></i> Auditoría de Google Sheets
+                                    </button>
+                                </div>
+
+                                {activeAdminTab === 'comercios' && (
+                                    <div class="bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                                        <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                                            <h3 class="font-bold text-lg text-white">Comercios Afiliados</h3>
+                                        </div>
+                                        <div class="overflow-x-auto">
+                                            <table class="w-full text-left border-collapse">
+                                                <thead>
+                                                    <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-bold bg-slate-950/40">
+                                                        <th class="p-4">Foto / Comercio</th>
+                                                        <th class="p-4">Credenciales</th>
+                                                        <th class="p-4">Estatus del SaaS</th>
+                                                        <th class="p-4">WhatsApp Logístico</th>
+                                                        <th class="p-4 text-center">Controles</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody class="divide-y divide-slate-800">
+                                                    {merchants.map((m) => (
+                                                        <tr key={m.ID_Comercio} class="hover:bg-slate-800/40 transition">
+                                                            <td class="p-4 flex items-center gap-3">
+                                                                <img src={m.FotoUrl} alt={m.Nombre} class="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                                <div>
+                                                                    <div class="font-bold text-white text-base">{m.Nombre}</div>
+                                                                    <div class="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
+                                                                    <div class="text-[10px] text-slate-500 font-mono mt-0.5">ID: {m.ID_Comercio}</div>
+                                                                </div>
+                                                            </td>
+                                                            <td class="p-4">
+                                                                <div class="text-xs font-mono text-slate-300">{m.Usuario}</div>
+                                                                <div class="text-xs text-slate-500 mt-1 font-mono">Clave: {m.Contrasena}</div>
+                                                            </td>
+                                                            <td class="p-4">
+                                                                <span class={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 border ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
+                                                                    <span class={`w-1.5 h-1.5 rounded-full ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-400" : "bg-red-400"}`}></span>
+                                                                    {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Al corriente" : "Suspendido"}
+                                                                </span>
+                                                            </td>
+                                                            <td class="p-4 text-xs font-mono text-slate-300">
+                                                                {m.WhatsApp_Group_ID || 'N/A'}
+                                                            </td>
+                                                            <td class="p-4">
+                                                                <div class="flex justify-center gap-2">
+                                                                    <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} class={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
+                                                                        {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Suspender" : "Activar"}
+                                                                    </button>
+                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border border-slate-700">
+                                                                        <i class="fa-solid fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeAdminTab === 'ordenes_globales' && (
+                                    <div class="space-y-6">
+                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ventas Brutas Totales</p>
+                                                <h4 class="text-2xl font-black text-amber-500">${totalRevenue.toFixed(2)} MXN</h4>
+                                            </div>
+                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ticket Promedio</p>
+                                                <h4 class="text-2xl font-black text-emerald-400">${avgTicket.toFixed(2)} MXN</h4>
+                                            </div>
+                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Comisión DFC</p>
+                                                <h4 class="text-2xl font-black text-blue-400">${totalDelivery.toFixed(2)} MXN</h4>
+                                            </div>
+                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total de Pedidos</p>
+                                                <h4 class="text-2xl font-black text-purple-400">{filteredOrders.length} Órdenes</h4>
+                                            </div>
+                                        </div>
+
+                                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                                            <div class="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
+                                                <h3 class="font-bold text-lg text-white">Historial Global de Transacciones</h3>
+                                                <div class="flex flex-wrap gap-2 text-slate-200">
+                                                    <select value={filterMerchant} onChange={(e) => setFilterMerchant(e.target.value)} class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none">
+                                                        <option value="todos">Todos los comercios</option>
+                                                        {merchants.map(m => <option key={m.ID_Comercio} value={m.ID_Comercio}>{m.Nombre}</option>)}
+                                                    </select>
+                                                    <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none">
+                                                        <option value="todos">Todos los métodos de pago</option>
+                                                        <option value="Efectivo">Efectivo</option>
+                                                        <option value="Tarjeta de Débito/Crédito">Tarjeta</option>
+                                                        <option value="Transferencia SPEI">Transferencia</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="overflow-x-auto">
+                                                <table class="w-full text-left border-collapse">
+                                                    <thead>
+                                                        <tr class="bg-slate-950/40 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-800">
+                                                            <th class="p-4">ID / Comercio</th>
+                                                            <th class="p-4">Cliente / Dirección</th>
+                                                            <th class="p-4">Detalle de Compra</th>
+                                                            <th class="p-4">Método de Pago</th>
+                                                            <th class="p-4 text-right">Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-800 text-sm">
+                                                        {filteredOrders.length === 0 ? (
+                                                            <tr><td colSpan="5" class="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros de búsqueda.</td></tr>
+                                                        ) : (
+                                                            filteredOrders.map(o => {
+                                                                const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
+                                                                return (
+                                                                    <tr key={o.ID_Orden} class="hover:bg-slate-800/20 transition">
+                                                                        <td class="p-4 font-mono"><span class="text-amber-500 font-bold block">{o.ID_Orden}</span><span class="text-[10px] text-slate-500 uppercase">{name}</span></td>
+                                                                        <td class="p-4"><div class="font-bold text-slate-200">{o.Cliente}</div><div class="text-xs text-slate-400">{o.Direccion}</div></td>
+                                                                        <td class="p-4 text-slate-300 font-mono text-xs max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                        <td class="p-4"><div class="text-xs font-semibold">{o.Metodo_Pago}</div></td>
+                                                                        <td class="p-4 text-right font-black text-white text-base">${o.Total} MXN</td>
+                                                                    </tr>
+                                                                );
+                                                            })
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {activeAdminTab === 'db' && (
+                                    <div class="space-y-6">
+                                        <div class="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800">
+                                            <h3 class="font-bold text-lg text-white mb-4"><i class="fa-solid fa-database text-amber-500 mr-2"></i>Estructura Sincronizada con Google Sheets</h3>
+                                            <p class="text-xs text-slate-400 mb-4 leading-relaxed">
+                                                Representación visual exacta de las pestañas mapeadas en tu documento de Google Drive.
+                                            </p>
+                                        </div>
+                                        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                            <div class="bg-emerald-950/30 p-4 border-b border-slate-800 flex justify-between items-center text-xs font-mono">
+                                                <span class="font-bold text-emerald-400">Tabla: Configuracion_Comercios</span>
+                                                <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
+                                            </div>
+                                            <div class="overflow-x-auto text-[11px] font-mono p-2">
+                                                <table class="w-full text-left bg-slate-950 rounded-lg">
+                                                    <thead>
+                                                        <tr class="bg-slate-900 text-slate-400 border-b border-slate-800">
+                                                            <th class="p-2 border-r border-slate-800">ID_Comercio</th>
+                                                            <th class="p-2 border-r border-slate-800">Nombre</th>
+                                                            <th class="p-2 border-r border-slate-800">Usuario</th>
+                                                            <th class="p-2 border-r border-slate-800">Contrasena</th>
+                                                            <th class="p-2 border-r border-slate-800">Estatus</th>
+                                                            <th class="p-2 border-r border-slate-800">Categoria</th>
+                                                            <th class="p-2 border-r border-slate-800">WhatsApp_Group_ID</th>
+                                                            <th class="p-2 border-r border-slate-800">Facebook_Page_ID</th>
+                                                            <th class="p-2">Contacto</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody class="divide-y divide-slate-800 text-slate-300">
+                                                        {merchants.map(m => (
+                                                            <tr key={m.ID_Comercio}>
+                                                                <td class="p-2 border-r border-slate-800">{m.ID_Comercio}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Nombre}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Usuario}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Contrasena}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Estatus}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Categoria}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.WhatsApp_Group_ID || 'N/A'}</td>
+                                                                <td class="p-2 border-r border-slate-800">{m.Facebook_Page_ID || 'N/A'}</td>
+                                                                <td class="p-2">{m.Contacto}</td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                            <h4 class="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Simulador Webhook Live Stream (Sincronización Make)</h4>
+                                            <div class="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800">
+                                                {webhookLog.length === 0 ? (
+                                                    <span class="text-slate-600 italic">Esperando peticiones y disparos en vivo... Realice una simulación de compra o publicidad IA para ver el JSON de salida.</span>
+                                                ) : (
+                                                    webhookLog.map((log, index) => <pre key={index} class="text-emerald-400 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 overflow-x-auto mt-2">{log}</pre>)
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {showNewMerchantModal && (
+                            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                                <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+                                    <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
+                                        <h3 class="font-black text-lg text-white">Registrar Nuevo Comercio</h3>
+                                        <button onClick={() => setShowNewMerchantModal(false)} class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                                    </div>
+                                    <form onSubmit={createMerchant} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre del Comercio *</label>
+                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
+                                                <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
+                                                    <option value="Servicios">Servicios</option>
+                                                    <option value="Restaurante">Restaurante</option>
+                                                    <option value="Tecnología">Tecnología</option>
+                                                    <option value="Tienda local">Tienda local</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Opcional)</label>
+                                            <input type="url" placeholder="https://images.unsplash.com/..." value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
+                                                <input type="text" placeholder="Nombre de la persona" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                            </div>
+                                            <div>
+                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Teléfono Principal *</label>
+                                                <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                            </div>
+                                        </div>
+                                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                                            <p class="text-xs font-bold text-amber-500 uppercase tracking-widest">Credenciales de Acceso (Comercio)</p>
+                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div>
+                                                    <label class="block text-[10px] uppercase text-slate-400 mb-1">Email de Usuario *</label>
+                                                    <input type="email" placeholder="usuario@zeloxcloud.com" value={newMerchant.Usuario} onChange={(e) => setNewMerchant({...newMerchant, Usuario: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                </div>
+                                                <div>
+                                                    <label class="block text-[10px] uppercase text-slate-400 mb-1">Contraseña *</label>
+                                                    <input type="text" placeholder="Contraseña" value={newMerchant.Contrasena} onChange={(e) => setNewMerchant({...newMerchant, Contrasena: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="pt-4 flex gap-3">
+                                            <button type="button" onClick={() => setShowNewMerchantModal(false)} class="w-1/2 bg-slate-850 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
+                                            <button type="submit" class="w-1/2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar Comercio</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
+
+                        {view === 'merchant' && (
+                            <div>
+                                {(() => {
+                                    const merchant = merchants.find(m => m.ID_Comercio === loggedUser.merchantId);
+                                    if (!merchant) return null;
+                                    return (
+                                        <div>
+                                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                                <div class="flex items-center gap-4">
+                                                    <img src={merchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                    <div>
+                                                        <div class="flex items-center gap-2.5">
+                                                            <span class="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
+                                                            <h2 class="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                        </div>
+                                                        <p class="text-sm text-slate-400 mt-1">SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
+                                                    </div>
+                                                </div>
+                                                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-1 text-slate-400">
+                                                    <div>Estatus: <span class="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
+                                                    <div>WhatsApp ID: <span class="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
+                                                </div>
+                                            </div>
+
+                                            <div class="flex gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                                <button onClick={() => setActiveMerchantTab('pedidos')} class={`pb-3 px-4 transition ${activeMerchantTab === 'pedidos' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i class="fa-solid fa-bell-concierge mr-2"></i> Pedidos en Vivo
+                                                    <span class="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{orders.filter(o => o.ID_Comercio === merchant.ID_Comercio && o.Estado !== "Entregado").length}</span>
+                                                </button>
+                                                <button onClick={() => setActiveMerchantTab('catalogo')} class={`pb-3 px-4 transition ${activeMerchantTab === 'catalogo' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i class="fa-solid fa-list-check mr-2"></i> Mi Catálogo
+                                                </button>
+                                                <button onClick={() => setActiveMerchantTab('config')} class={`pb-3 px-4 transition ${activeMerchantTab === 'config' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i class="fa-solid fa-bullhorn mr-2"></i> Configuración y Publicidad IA
+                                                </button>
+                                            </div>
+
+                                            {activeMerchantTab === 'pedidos' && (
+                                                <div class="space-y-4">
+                                                    <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                                        <div class="overflow-x-auto">
+                                                            <table class="w-full text-left border-collapse">
+                                                                <thead>
+                                                                    <tr class="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-850">
+                                                                        <th class="p-4">ID de Pedido</th>
+                                                                        <th class="p-4">Cliente / Dirección</th>
+                                                                        <th class="p-4">Productos</th>
+                                                                        <th class="p-4">Método de Pago</th>
+                                                                        <th class="p-4">Total</th>
+                                                                        <th class="p-4 text-center">Control de Despacho</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody class="divide-y divide-slate-800 text-sm">
+                                                                    {orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
+                                                                        <tr><td colSpan="6" class="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
+                                                                    ) : (
+                                                                        orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).map(o => (
+                                                                            <tr key={o.ID_Orden} class={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
+                                                                                <td class="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
+                                                                                <td class="p-4">
+                                                                                    <div class="font-bold text-white">{o.Cliente}</div>
+                                                                                    <div class="text-xs text-slate-400 flex items-center gap-1.5 mt-1"><i class="fa-solid fa-location-dot text-slate-500"></i>{o.Direccion}</div>
+                                                                                </td>
+                                                                                <td class="p-4 text-slate-300 font-medium max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                                <td class="p-4 text-xs font-semibold">
+                                                                                    <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-300">{o.Metodo_Pago}</span>
+                                                                                    {o.Cambio > 0 && <p class="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
+                                                                                </td>
+                                                                                <td class="p-4 font-black text-white text-base">${o.Total} MXN</td>
+                                                                                <td class="p-4 text-center">
+                                                                                    {o.Estado === "Entregado" ? (
+                                                                                        <span class="bg-emerald-500/10 text-emerald-400 font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center justify-center gap-1.5 w-max mx-auto">
+                                                                                            <i class="fa-solid fa-circle-check"></i> Entregado
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <button onClick={() => advanceOrderState(o.ID_Orden)} class={`px-4 py-2 rounded-lg text-xs font-black transition w-max mx-auto flex items-center gap-2 ${o.Estado === "Nuevo" ? 'bg-amber-500 text-slate-950 shadow-lg hover:bg-amber-600' : 'bg-blue-600 text-white shadow-lg hover:bg-blue-500'}`}>
+                                                                                            {o.Estado === "Nuevo" ? "Despachar / En Ruta" : "Confirmar Entrega"}
+                                                                                        </button>
+                                                                                    )}
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {activeMerchantTab === 'catalogo' && (
+                                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
+                                                        <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3"><i class="fa-solid fa-circle-plus text-amber-500 mr-2"></i>Nuevo Producto</h3>
+                                                        <form onSubmit={handleAddProduct} class="space-y-4 text-sm">
+                                                            <div>
+                                                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nombre del Producto *</label>
+                                                                <input type="text" placeholder="ej. Asesoría Contable" value={newProduct.Nombre_Producto} onChange={(e) => setNewProduct({...newProduct, Nombre_Producto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                            </div>
+                                                            <div class="grid grid-cols-2 gap-4">
+                                                                <div>
+                                                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Precio (MXN) *</label>
+                                                                    <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                                </div>
+                                                                <div>
+                                                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Emoji</label>
+                                                                    <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                                                                        <option value="💼">💼 Servicios</option>
+                                                                        <option value="🚀">🚀 SaaS</option>
+                                                                        <option value="🌶️">🌶️ Salsa</option>
+                                                                        <option value="🌮">🌮 Taco</option>
+                                                                        <option value="📦">📦 General</option>
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
+                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                                                            </div>
+                                                            <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar en Catálogo</button>
+                                                        </form>
+                                                    </div>
+
+                                                    <div class="lg:col-span-2 space-y-4">
+                                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                                            <h3 class="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
+                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
+                                                                    <p class="text-slate-500 italic col-span-2 text-center py-6">Catálogo vacío.</p>
+                                                                ) : (
+                                                                    products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
+                                                                        <div key={p.ID_Producto} class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
+                                                                            <div class="flex gap-3">
+                                                                                <span class="text-3xl p-2 bg-slate-900 rounded-lg">{p.Imagen}</span>
+                                                                                <div>
+                                                                                    <h4 class="font-bold text-white text-sm">{p.Nombre_Producto}</h4>
+                                                                                    <p class="text-xs text-slate-400 mt-1 line-clamp-2">{p.Descripcion}</p>
+                                                                                    <span class="text-xs text-amber-500 font-extrabold block mt-2">${p.Precio} MXN</span>
+                                                                                </div>
+                                                                            </div>
+                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} class="text-slate-650 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                                                                        </div>
+                                                                    ))
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {activeMerchantTab === 'config' && (
+                                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
+                                                        <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i class="fa-solid fa-robot"></i></div>
+                                                        <h3 class="font-bold text-lg text-white">Marketing Inteligente IA</h3>
+                                                        <textarea placeholder="Ej: Hoy 2x1 en consultorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
+                                                        <button onClick={() => runAiAdvertising(merchant)} class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
+                                                    </div>
+
+                                                    <div class="lg:col-span-2 space-y-6">
+                                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6">
+                                                            <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3">Código QR & Enlace de Autogestión</h3>
+                                                            <div class="flex flex-col md:flex-row gap-6 items-center">
+                                                                <div class="bg-white p-4 rounded-2xl w-44 h-44 flex items-center justify-center shadow-xl">
+                                                                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(dynamicStoreLink)}`} alt="QR" class="w-36 h-36" />
+                                                                </div>
+                                                                <div class="space-y-4 flex-grow">
+                                                                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Enlace del Menú Digital Público</span>
+                                                                    <div class="flex gap-2">
+                                                                        <input type="text" value={dynamicStoreLink} readOnly class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none" />
+                                                                        <button onClick={() => { navigator.clipboard.writeText(dynamicStoreLink); showToast("📋 Enlace copiado"); }} class="bg-slate-850 hover:bg-slate-800 text-slate-300 px-3 rounded-xl border border-slate-805"><i class="fa-solid fa-copy"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {view === 'shop' && (
+                            <div>
+                                {(() => {
+                                    const merchant = merchants.find(m => m.ID_Comercio === currentShopId);
+                                    if (!merchant) return <p class="text-center text-slate-500">Comercio deshabilitado.</p>;
+                                    return (
+                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div class="lg:col-span-2 space-y-6">
+                                                <div class="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
+                                                    <img src={merchant.FotoUrl} alt={merchant.Nombre} class="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
+                                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
+                                                    <div class="relative z-20 space-y-2">
+                                                        <span class="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
+                                                        <h2 class="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                        <p class="text-xs text-slate-300">📞 {merchant.Telefono}</p>
+                                                    </div>
+                                                </div>
+
+                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
+                                                        <p class="text-slate-500 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
+                                                    ) : (
+                                                        products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
+                                                            <div key={p.ID_Producto} class="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
+                                                                <div class="space-y-2">
+                                                                    <div class="flex justify-between items-start">
+                                                                        <span class="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800">{p.Imagen}</span>
+                                                                        <span class="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
+                                                                    </div>
+                                                                    <h3 class="font-bold text-white text-base pt-2">{p.Nombre_Producto}</h3>
+                                                                    <p class="text-xs text-slate-400 line-clamp-3">{p.Descripcion}</p>
+                                                                </div>
+                                                                <button onClick={() => addToCart(p)} class="w-full mt-4 bg-slate-950 text-slate-300 hover:bg-amber-500 hover:text-slate-950 py-2 rounded-xl text-xs font-bold border border-slate-800 transition">Agregar al Pedido</button>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div class="space-y-6">
+                                                <div class="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
+                                                    <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
+                                                        <span>Resumen de Compra</span>
+                                                        <span class="text-xs text-slate-400">({Object.values(cart).reduce((sum, i) => sum + i.qty, 0)} items)</span>
+                                                    </h3>
+
+                                                    {Object.keys(cart).length === 0 ? (
+                                                        <p class="text-xs italic text-slate-500 text-center py-6">Carrito vacío.</p>
+                                                    ) : (
+                                                        <div class="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
+                                                            {Object.values(cart).map(item => (
+                                                                <div key={item.ID_Producto} class="py-2.5 flex justify-between items-center text-xs">
+                                                                    <div>
+                                                                        <p class="font-bold text-slate-200">{item.Nombre_Producto}</p>
+                                                                        <p class="text-slate-500 text-[10px]">${item.Precio} x {item.qty}</p>
+                                                                    </div>
+                                                                    <div class="flex items-center gap-2">
+                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} class="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i class="fa-solid fa-minus"></i></button>
+                                                                        <span class="font-bold text-slate-200">{item.qty}</span>
+                                                                        <button onClick={() => addToCart(item)} class="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i class="fa-solid fa-plus"></i></button>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+
+                                                    {Object.keys(cart).length > 0 && (
+                                                        <div class="space-y-4 pt-3 border-t border-slate-800 text-xs">
+                                                            <div>
+                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Dirección de Envío *</label>
+                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} class="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs" required />
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Propina Repartidor</label>
+                                                                <div class="grid grid-cols-4 gap-1">
+                                                                    {[0, 5, 10, 15].map(p => (
+                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} class={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Forma de Pago</label>
+                                                                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} class="w-full bg-slate-950 border border-slate-855 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs">
+                                                                    <option value="Efectivo">Efectivo</option>
+                                                                    <option value="Tarjeta de Débito/Crédito">Tarjeta de Débito/Crédito</option>
+                                                                    <option value="Transferencia SPEI">Transferencia SPEI</option>
+                                                                </select>
+                                                                {paymentMethod === "Efectivo" && (
+                                                                    <input type="number" placeholder="¿Con cuánto vas a pagar?" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} class="w-full mt-2 bg-slate-950 border border-slate-850 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none" required />
+                                                                )}
+                                                            </div>
+
+                                                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-850 space-y-2 font-mono text-[11px] text-slate-400">
+                                                                <div class="flex justify-between"><span>Subtotal:</span><span>${cartTotal.toFixed(2)}</span></div>
+                                                                <div class="flex justify-between"><span>Envío:</span><span>${deliveryFee.toFixed(2)}</span></div>
+                                                                <div class="flex justify-between"><span>Propina:</span><span>${currentTipVal.toFixed(2)}</span></div>
+                                                                <div class="flex justify-between border-t border-slate-855 pt-2 font-bold text-white text-xs"><span>Total:</span><span class="text-amber-500">${finalTotal.toFixed(2)} MXN</span></div>
+                                                            </div>
+
+                                                            <button type="button" onClick={() => handlePlaceOrder(merchant)} class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Confirmar Pedido Digital</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
+                            </div>
+                        )}
+
+                        {orderConfirmedModal && lastPlacedOrder && (
+                            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                                <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+                                    <div class="bg-slate-950/40 p-6 text-center border-b border-slate-850">
+                                        <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i class="fa-solid fa-circle-check"></i></div>
+                                        <h3 class="text-xl font-black text-white">¡Pedido Enviado!</h3>
+                                    </div>
+                                    <div class="p-6 space-y-4 text-xs font-mono">
+                                        <div class="flex justify-between"><span>ID Orden:</span><span class="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
+                                        <div class="flex justify-between"><span>Total:</span><span class="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
+                                    </div>
+                                    <div class="p-6 bg-slate-950/40 border-t border-slate-850">
+                                        <button onClick={() => setOrderConfirmedModal(false)} class="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    <footer class="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 relative z-10">
+                        <p>© 2026 ZeloxCloud Local Hub. Una solución de automatización inteligente de Grupo DFC.</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ZeloxCloudApp />);
+    </script>
+</body>
+</html>
+```
+eof
+
+¡Listo, Juan! He colocado las instrucciones paso a paso muy detalladas con los nombres en español en el panel de la derecha y el código completo de la app limpia y lista en el archivo `index.html`. 
+
+Una vez que subas este archivo a tu GitHub como te indico en la guía, estarás listo para configurar Netlify y disfrutar de tu aplicación en línea. Házmelo saber si lograste subirlo correctamente o si tienes alguna duda técnica en el camino.
