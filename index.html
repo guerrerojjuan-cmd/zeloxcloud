@@ -97,7 +97,12 @@
             { ID_Producto: "p10", ID_Comercio: "abarrotes-lara", Nombre_Producto: "Cartera de Huevo Blanco (30 pzs)", Precio: 88, Descripcion: "Huevo fresco seleccionado de la mejor calidad.", Imagen: "🥚" }
         ];
 
-        // --- STREAMING_CHUNK: Defining Helper Functions for URL transformations... ---
+        // --- STREAMING_CHUNK: Defining helper detection for graphics render... ---
+        const isEmoji = (str) => {
+            if (!str) return false;
+            return !str.startsWith('http') && !str.startsWith('blob:') && !str.startsWith('data:');
+        };
+
         const transformDriveUrl = (url) => {
             if (!url) return '';
             const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
@@ -132,11 +137,11 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio context trigger waiting.", e);
+                console.log("Audio contextual delay bypass.", e);
             }
         };
 
-        // --- STREAMING_CHUNK: Rendering Adaptive Vector Brand Logo Component... ---
+        // --- STREAMING_CHUNK: Brand logo vector fallback component... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -158,32 +163,32 @@
             );
         }
 
-        // --- STREAMING_CHUNK: Main Application Component and State Logic... ---
+        // --- STREAMING_CHUNK: App core reactive states configuration... ---
         function ZeloxCloudApp() {
             const [merchants, setMerchants] = useState(() => {
-                const stored = localStorage.getItem("zc_merchants_production_v9");
+                const stored = localStorage.getItem("zc_merchants_production_v10");
                 return stored ? JSON.parse(stored) : defaultMerchants;
             });
             const [products, setProducts] = useState(() => {
-                const stored = localStorage.getItem("zc_products_production_v9");
+                const stored = localStorage.getItem("zc_products_production_v10");
                 return stored ? JSON.parse(stored) : defaultProducts;
             });
             const [orders, setOrders] = useState(() => {
-                const stored = localStorage.getItem("zc_orders_production_v9");
+                const stored = localStorage.getItem("zc_orders_production_v10");
                 return stored ? JSON.parse(stored) : [];
             });
             const [webhookUrl, setWebhookUrl] = useState(() => {
                 return localStorage.getItem("zc_webhook_url_production") || "";
             });
 
-            // Navigation and Context States
+            // Navigation Routing
             const [view, setView] = useState('login');
             const [loggedUser, setLoggedUser] = useState(null);
             const [currentShopId, setCurrentShopId] = useState('dfc-cloud');
             const [activeMerchantTab, setActiveMerchantTab] = useState('pedidos');
             const [activeAdminTab, setActiveAdminTab] = useState('comercios');
 
-            // Form inputs
+            // Inputs
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPass, setLoginPass] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -192,24 +197,27 @@
             const [promoIdea, setPromoIdea] = useState('');
             const [targetNetworks, setTargetNetworks] = useState({ facebook: true, instagram: true, whatsapp: true });
 
-            // Global modal states for overriding native alert/confirm
+            // Customized Modal Framework
             const [customAlert, setCustomAlert] = useState({ show: false, title: '', message: '' });
             const [customConfirm, setCustomConfirm] = useState({ show: false, title: '', message: '', onConfirm: null });
 
-            // Filters
+            // Dynamic Filter states
             const [filterMerchant, setFilterMerchant] = useState('todos');
             const [filterPayment, setFilterPayment] = useState('todos');
 
-            // Add Entity States
+            // Add Entity Modals
             const [showNewMerchantModal, setShowNewMerchantModal] = useState(false);
             const [newMerchant, setNewMerchant] = useState({
                 Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
                 WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
                 Usuario: '', Contrasena: '', FotoUrl: ''
             });
-            const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
 
-            // Shopping Cart State
+            // --- STREAMING_CHUNK: Setting product parameters with local file uploads... ---
+            const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
+            const [uploadedProductPhoto, setUploadedProductPhoto] = useState(null);
+
+            // Checkout state
             const [cart, setCart] = useState({});
             const [deliveryAddress, setDeliveryAddress] = useState('');
             const [tipPercent, setTipPercent] = useState(10);
@@ -222,24 +230,24 @@
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
 
-            // --- STREAMING_CHUNK: Local Cache synchronization... ---
+            // --- STREAMING_CHUNK: Local cache synchronization loops... ---
             useEffect(() => {
-                localStorage.setItem("zc_merchants_production_v9", JSON.stringify(merchants));
+                localStorage.setItem("zc_merchants_production_v10", JSON.stringify(merchants));
             }, [merchants]);
             useEffect(() => {
-                localStorage.setItem("zc_products_production_v9", JSON.stringify(products));
+                localStorage.setItem("zc_products_production_v10", JSON.stringify(products));
             }, [products]);
             useEffect(() => {
-                localStorage.setItem("zc_orders_production_v9", JSON.stringify(orders));
+                localStorage.setItem("zc_orders_production_v10", JSON.stringify(orders));
             }, [orders]);
             useEffect(() => {
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
             }, [webhookUrl]);
 
-            // Sync multi-tabs in real-time
+            // Sync multi-tabs
             useEffect(() => {
                 const handleStorageChange = (e) => {
-                    if (e.key === "zc_orders_production_v9") {
+                    if (e.key === "zc_orders_production_v10") {
                         const updated = JSON.parse(e.newValue);
                         if (updated.length > orders.length) {
                             playChime();
@@ -252,7 +260,7 @@
                 return () => window.removeEventListener("storage", handleStorageChange);
             }, [orders]);
 
-            // --- STREAMING_CHUNK: QR routing direct check... ---
+            // QR Routing Detection
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const shopParam = params.get('shop');
@@ -288,7 +296,22 @@
                 }
             };
 
-            // --- STREAMING_CHUNK: Authentication handling... ---
+            // --- STREAMING_CHUNK: Profile picture updates... ---
+            const handleStorePhotoChange = (e, merchantId) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const blobUrl = URL.createObjectURL(file);
+                    const updated = merchants.map(m => m.ID_Comercio === merchantId ? { ...m, FotoUrl: blobUrl } : m);
+                    setMerchants(updated);
+                    showToast("📸 Foto de perfil de WhatsApp actualizada");
+                    
+                    const syncLog = { event: "merchant_photo_updated", ID_Comercio: merchantId, FotoUrl: blobUrl, timestamp: new Date().toISOString() };
+                    setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
+                    triggerWebhook(syncLog);
+                }
+            };
+
+            // --- STREAMING_CHUNK: Authentication processing... ---
             const handleLogin = (e) => {
                 e.preventDefault();
                 setLoginError('');
@@ -364,20 +387,40 @@
                 });
             };
 
+            // --- STREAMING_CHUNK: Handle Product upload & dynamic URL creator... ---
+            const handleProductPhotoChange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const blobUrl = URL.createObjectURL(file);
+                    setUploadedProductPhoto(blobUrl);
+                    showToast("📸 Foto de producto lista para cargarse");
+                }
+            };
+
             const handleAddProduct = (e) => {
                 e.preventDefault();
                 if (!newProduct.Nombre_Producto || !newProduct.Precio) return;
+                
+                // If a real photo was uploaded, use that blob URL as image resource, otherwise use chosen emoji
+                const finalImageSource = uploadedProductPhoto ? uploadedProductPhoto : newProduct.Imagen;
+
                 const prod = {
                     ID_Producto: 'p-' + Date.now(),
                     ID_Comercio: loggedUser.merchantId,
                     Nombre_Producto: newProduct.Nombre_Producto,
                     Precio: parseFloat(newProduct.Precio),
                     Descripcion: newProduct.Descripcion,
-                    Imagen: newProduct.Imagen
+                    Imagen: finalImageSource
                 };
                 setProducts([...products, prod]);
                 setNewProduct({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
-                showToast("✅ Producto añadido");
+                setUploadedProductPhoto(null);
+                
+                // Reset file input element
+                const fileInput = document.getElementById('file-upload-prod');
+                if (fileInput) fileInput.value = '';
+
+                showToast("✅ Producto añadido con éxito");
             };
 
             const deleteProduct = (id) => {
@@ -417,7 +460,7 @@
             const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
             const finalTotal = cartTotal + deliveryFee + currentTipVal;
 
-            // --- STREAMING_CHUNK: Validating order and processing payloads... ---
+            // --- STREAMING_CHUNK: Finalizing checkouts and triggers... ---
             const handlePlaceOrder = (merchant) => {
                 if (!deliveryAddress.trim()) {
                     setCustomAlert({
@@ -526,7 +569,7 @@
             const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
             const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
 
-            // --- STREAMING_CHUNK: Rendering the visual interface grid... ---
+            // --- STREAMING_CHUNK: Interface Layout Framework... ---
             return (
                 <div className="flex flex-col min-h-screen justify-between relative">
                     {notificationToast && (
@@ -536,15 +579,15 @@
                         </div>
                     )}
 
-                    {/* Master Header */}
+                    {/* Header */}
                     <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
                         <div className="flex items-center gap-3.5">
                             <button 
                                 onClick={() => { setView('login'); window.history.pushState({}, '', window.location.pathname); }} 
-                                className="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center"
+                                className="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center w-11 h-11"
                                 title="Volver a la pantalla principal"
                             >
-                                <i className="fa-solid fa-house"></i>
+                                <i className="fa-solid fa-house text-base"></i>
                             </button>
                             <BrandLogo className="w-11 h-11" />
                             <div>
@@ -555,27 +598,28 @@
                             </div>
                         </div>
 
-                        {/* Store Selector and user details */}
+                        {/* Navigation Right */}
                         <div className="flex flex-wrap items-center gap-3 md:gap-4">
                             {loggedUser ? (
                                 <div className="flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                                    <span className="text-xs text-slate-300">
+                                    <span className="text-xs text-slate-300 flex items-center">
                                         <i className="fa-solid fa-circle-user text-amber-500 mr-2"></i>
-                                        {loggedUser.email}
+                                        <span className="max-w-[150px] truncate">{loggedUser.email}</span>
                                     </span>
-                                    <button onClick={() => setLoggedUser(null)} className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
+                                    <button onClick={() => setLoggedUser(null)} className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center h-8">
                                         <i className="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
                             ) : (
                                 view !== 'login' && (
-                                    <button onClick={() => setView('login')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                                    <button onClick={() => setView('login')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition h-9 flex items-center">
                                         <i className="fa-solid fa-lock mr-1.5"></i> Panel Privado
                                     </button>
                                 )
                             )}
 
-                            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 text-xs">
+                            {/* Dropdown Menu replacing horizontal line list of shops */}
+                            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs">
                                 <span className="px-2 text-slate-400 font-bold"><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
                                     value={view === 'shop' ? currentShopId : ''}
@@ -590,7 +634,7 @@
                                             window.history.pushState({}, '', window.location.pathname);
                                         }
                                     }}
-                                    className="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-md focus:outline-none focus:border-amber-500 font-bold cursor-pointer"
+                                    className="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9"
                                 >
                                     <option value="">Seleccionar...</option>
                                     {merchants.map(m => (
@@ -601,8 +645,9 @@
                         </div>
                     </header>
 
-                    {/* Main Workspace content */}
+                    {/* Workspace Wrapper */}
                     <main className="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
+                        
                         {/* VIEW: LOGIN */}
                         {view === 'login' && (
                             <div className="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
@@ -646,7 +691,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Suspend state handling... --- */}
+                        {/* VIEW: SUSPENDED SCREEN */}
                         {showBlockedScreen && (
                             <div className="max-w-lg mx-auto my-12 bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative">
                                 <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
@@ -668,7 +713,7 @@
                             </div>
                         )}
 
-                        {/* VIEW: SUPER ADMIN */}
+                        {/* --- STREAMING_CHUNK: Super administrator console workspace... --- */}
                         {view === 'super_admin' && (
                             <div>
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -717,7 +762,24 @@
                                                     {merchants.map((m) => (
                                                         <tr key={m.ID_Comercio} className="hover:bg-slate-800/40 transition">
                                                             <td className="p-4 flex items-center gap-3">
-                                                                <img src={transformDriveUrl(m.FotoUrl)} alt={m.Nombre} className="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                                {/* Clickable store logo that opens profile picture selector -- WhatsApp style! */}
+                                                                <div className="relative group w-12 h-12 rounded-lg overflow-hidden border border-slate-700 cursor-pointer">
+                                                                    <img 
+                                                                        src={transformDriveUrl(m.FotoUrl)} 
+                                                                        alt={m.Nombre} 
+                                                                        className="w-full h-full object-cover" 
+                                                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
+                                                                    />
+                                                                    <label className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[9px] font-bold text-white text-center p-0.5">
+                                                                        <i className="fa-solid fa-camera text-base"></i>
+                                                                        <input 
+                                                                            type="file" 
+                                                                            accept="image/*" 
+                                                                            className="hidden" 
+                                                                            onChange={(e) => handleStorePhotoChange(e, m.ID_Comercio)} 
+                                                                        />
+                                                                    </label>
+                                                                </div>
                                                                 <div>
                                                                     <div className="font-bold text-white text-base">{m.Nombre}</div>
                                                                     <div className="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
@@ -755,7 +817,7 @@
                                     </div>
                                 )}
 
-                                {/* --- STREAMING_CHUNK: Global orders filter block rendering... --- */}
+                                {/* ADMIN TAB: GLOBAL ORDERS */}
                                 {activeAdminTab === 'ordenes_globales' && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
@@ -777,6 +839,7 @@
                                             </div>
                                         </div>
 
+                                        {/* --- STREAMING_CHUNK: Sorting and filtering of global logs... --- */}
                                         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                                             <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
                                                 <h3 className="font-bold text-lg text-white">Historial Global de Transacciones</h3>
@@ -806,7 +869,7 @@
                                                     </thead>
                                                     <tbody className="divide-y divide-slate-800 text-sm">
                                                         {filteredOrders.length === 0 ? (
-                                                            <tr><td colSpan="5" class="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
+                                                            <tr><td colSpan="5" className="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
                                                         ) : (
                                                             filteredOrders.map(o => {
                                                                 const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
@@ -828,10 +891,11 @@
                                     </div>
                                 )}
 
+                                {/* ADMIN TAB: AUDIT AND INTEGRATION LINKS */}
                                 {activeAdminTab === 'db' && (
                                     <div className="space-y-6">
                                         <div className="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800 space-y-4">
-                                            <h3 className="font-bold text-lg text-white"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
+                                            <h3 className="font-bold text-lg text-white"><i className="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
                                             <div className="max-w-xl">
                                                 <label className="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">URL de Webhook Maestro (Make.com)</label>
                                                 <div className="flex gap-2">
@@ -900,7 +964,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Register merchant dialog modal... --- */}
+                        {/* --- STREAMING_CHUNK: Create merchant dialog modal... --- */}
                         {showNewMerchantModal && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
@@ -926,7 +990,7 @@
                                         </div>
                                         <div>
                                             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Drive / Enlace Directo)</label>
-                                            <input type="url" placeholder="Pegar enlace aquí" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
+                                            <input type="url" placeholder="Pegar enlace aquí o subir abajo" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
@@ -968,9 +1032,28 @@
                                     if (!merchant) return null;
                                     return (
                                         <div>
+                                            {/* --- STREAMING_CHUNK: WhatsApp-style profile photo update section... --- */}
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                                                 <div className="flex items-center gap-4">
-                                                    <img src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                    {/* Profile Picture with Camera hover edit overlay */}
+                                                    <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-lg cursor-pointer">
+                                                        <img 
+                                                            src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} 
+                                                            alt={merchant.Nombre} 
+                                                            className="w-full h-full object-cover" 
+                                                            onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
+                                                        />
+                                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold text-center">
+                                                            <i className="fa-solid fa-camera text-xl mb-1"></i>
+                                                            Cambiar Foto
+                                                            <input 
+                                                                type="file" 
+                                                                accept="image/*" 
+                                                                className="hidden" 
+                                                                onChange={(e) => handleStorePhotoChange(e, merchant.ID_Comercio)} 
+                                                            />
+                                                        </label>
+                                                    </div>
                                                     <div>
                                                         <div className="flex items-center gap-2.5">
                                                             <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
@@ -998,7 +1081,7 @@
                                                 </button>
                                             </div>
 
-                                            {/* --- STREAMING_CHUNK: Processing orders section... --- */}
+                                            {/* LIVE ORDERS SECTION */}
                                             {activeMerchantTab === 'pedidos' && (
                                                 <div className="space-y-4">
                                                     <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
@@ -1052,6 +1135,7 @@
                                                 </div>
                                             )}
 
+                                            {/* --- STREAMING_CHUNK: Rendering expanded product addition with photos... --- */}
                                             {activeMerchantTab === 'catalogo' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
@@ -1067,16 +1151,54 @@
                                                                     <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
                                                                 </div>
                                                                 <div>
-                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Emoji</label>
+                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Categoría</label>
                                                                     <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
                                                                         <option value="💼">💼 Servicios</option>
                                                                         <option value="🚀">🚀 SaaS</option>
                                                                         <option value="🌶️">🌶️ Salsa</option>
                                                                         <option value="🌮">🌮 Taco</option>
-                                                                        <option value="📦">📦 General</option>
+                                                                        <option value="🍔">🍔 Hamburguesa</option>
+                                                                        <option value="🍕">🍕 Pizza</option>
+                                                                        <option value="🥤">🥤 Bebidas</option>
+                                                                        <option value="🍰">🍰 Postres</option>
+                                                                        <option value="🥚">🥚 Desayuno</option>
+                                                                        <option value="🍎">🍎 Frutas/Verduras</option>
+                                                                        <option value="🥛">🥛 Lácteos</option>
+                                                                        <option value="📦">📦 Abarrotes</option>
+                                                                        <option value="🧼">🧼 Limpieza</option>
+                                                                        <option value="💊">💊 Salud</option>
+                                                                        <option value="🛠️">🛠️ Ferretería</option>
+                                                                        <option value="💻">💻 Electrónica</option>
+                                                                        <option value="👔">👔 Ropa/Accesorios</option>
+                                                                        <option value="📚">📚 Papelería</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
+                                                            
+                                                            {/* Real Photo Upload File Input for products */}
+                                                            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                                                                <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">¿Subir Foto Real del Producto?</label>
+                                                                <input 
+                                                                    type="file" 
+                                                                    id="file-upload-prod"
+                                                                    accept="image/*" 
+                                                                    onChange={handleProductPhotoChange}
+                                                                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                                                />
+                                                                {uploadedProductPhoto && (
+                                                                    <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-amber-500/20">
+                                                                        <img src={uploadedProductPhoto} alt="Preview" className="w-full h-full object-cover" />
+                                                                        <button 
+                                                                            type="button" 
+                                                                            onClick={() => setUploadedProductPhoto(null)} 
+                                                                            className="absolute top-1 right-1 bg-red-600 text-white rounded-full p-1.5 text-xs flex items-center justify-center w-6 h-6"
+                                                                        >
+                                                                            <i className="fa-solid fa-xmark"></i>
+                                                                        </button>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
                                                             <div>
                                                                 <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
                                                                 <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
@@ -1085,6 +1207,7 @@
                                                         </form>
                                                     </div>
 
+                                                    {/* --- STREAMING_CHUNK: Rendering products table lists... --- */}
                                                     <div className="lg:col-span-2 space-y-4">
                                                         <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                                                             <h3 className="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
@@ -1094,8 +1217,10 @@
                                                                 ) : (
                                                                     products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
                                                                         <div key={p.ID_Producto} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
-                                                                            <div class="flex gap-3">
-                                                                                <span className="text-3xl p-2 bg-slate-900 rounded-lg">{p.Imagen}</span>
+                                                                            <div className="flex gap-3">
+                                                                                <span className="text-3xl p-2 bg-slate-900 rounded-lg flex items-center justify-center w-14 h-14 overflow-hidden border border-slate-800">
+                                                                                    {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
+                                                                                </span>
                                                                                 <div>
                                                                                     <h4 className="font-bold text-white text-sm">{p.Nombre_Producto}</h4>
                                                                                     <p className="text-xs text-slate-400 mt-1 line-clamp-2">{p.Descripcion}</p>
@@ -1112,7 +1237,7 @@
                                                 </div>
                                             )}
 
-                                            {/* --- STREAMING_CHUNK: Configuration and Marketing AI rendering... --- */}
+                                            {/* CONFIGURATION AND MARKETING AI */}
                                             {activeMerchantTab === 'config' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
@@ -1168,7 +1293,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Rendering the Public storefront view... --- */}
+                        {/* --- STREAMING_CHUNK: Public digital storefront rendering... --- */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
@@ -1195,7 +1320,10 @@
                                                             <div key={p.ID_Producto} className="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-start">
-                                                                        <span className="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800">{p.Imagen}</span>
+                                                                        {/* Dynamically checks if image is custom photo or emoji icon */}
+                                                                        <span className="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-center w-14 h-14 overflow-hidden">
+                                                                            {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
+                                                                        </span>
                                                                         <span className="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
                                                                     </div>
                                                                     <h3 className="font-bold text-white text-base pt-2">{p.Nombre_Producto}</h3>
@@ -1208,7 +1336,7 @@
                                                 </div>
                                             </div>
 
-                                            {/* Shopping Cart checkout pane */}
+                                            {/* Shopping Cart Side panel */}
                                             <div className="space-y-6">
                                                 <div className="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
                                                     <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
@@ -1280,7 +1408,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Modals for alerting client checkout... --- */}
+                        {/* --- STREAMING_CHUNK: Success dialog configuration... --- */}
                         {orderConfirmedModal && lastPlacedOrder && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
@@ -1301,7 +1429,7 @@
 
                         {/* UI Custom Dialog (Alert Modals overriding window.alert) */}
                         {customAlert.show && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 text-lg">
@@ -1326,7 +1454,7 @@
 
                         {/* UI Custom Confirm (Modals overriding window.confirm) */}
                         {customConfirm.show && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 text-lg">
@@ -1367,6 +1495,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Bootstrapping react on root node... ---
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<ZeloxCloudApp />);
     </script>
