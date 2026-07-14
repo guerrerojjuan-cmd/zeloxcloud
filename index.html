@@ -69,12 +69,10 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // --- CONSTANTE DE BASE DE DATOS EDITABLE (SIN ENLACE PRE-CARGADO) ---
         const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
 
-        // --- BASE DE DATOS REAL DE RESPALDO (8 COMERCIOS DE LA SUITE DFC) ---
         const defaultMerchants = [
-            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "dfc_cloud1@zeloxcloud.com", Contrasena: "DfCc1Oud1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
+            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "juan.guerrero64zeloxcloud.com", Contrasena: "Dfc2016", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
             { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620" },
             { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620" },
             { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000" },
@@ -97,7 +95,6 @@
             { ID_Producto: "p10", ID_Comercio: "abarrotes-lara", Nombre_Producto: "Cartera de Huevo Blanco (30 pzs)", Precio: 88, Descripcion: "Huevo fresco seleccionado de la mejor calidad.", Imagen: "🥚" }
         ];
 
-        // --- STREAMING_CHUNK: Defining helper detection for graphics render... ---
         const isEmoji = (str) => {
             if (!str) return false;
             return !str.startsWith('http') && !str.startsWith('blob:') && !str.startsWith('data:');
@@ -137,11 +134,10 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio contextual delay bypass.", e);
+                console.log("Audio contextual alert initialized.");
             }
         };
 
-        // --- STREAMING_CHUNK: Brand logo vector fallback component... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -163,18 +159,18 @@
             );
         }
 
-        // --- STREAMING_CHUNK: App core reactive states configuration... ---
         function ZeloxCloudApp() {
+            // Version v11 cache to flush obsolete structures
             const [merchants, setMerchants] = useState(() => {
-                const stored = localStorage.getItem("zc_merchants_production_v10");
+                const stored = localStorage.getItem("zc_merchants_production_v11");
                 return stored ? JSON.parse(stored) : defaultMerchants;
             });
             const [products, setProducts] = useState(() => {
-                const stored = localStorage.getItem("zc_products_production_v10");
+                const stored = localStorage.getItem("zc_products_production_v11");
                 return stored ? JSON.parse(stored) : defaultProducts;
             });
             const [orders, setOrders] = useState(() => {
-                const stored = localStorage.getItem("zc_orders_production_v10");
+                const stored = localStorage.getItem("zc_orders_production_v11");
                 return stored ? JSON.parse(stored) : [];
             });
             const [webhookUrl, setWebhookUrl] = useState(() => {
@@ -201,7 +197,7 @@
             const [customAlert, setCustomAlert] = useState({ show: false, title: '', message: '' });
             const [customConfirm, setCustomConfirm] = useState({ show: false, title: '', message: '', onConfirm: null });
 
-            // Dynamic Filter states
+            // Dynamic Filters
             const [filterMerchant, setFilterMerchant] = useState('todos');
             const [filterPayment, setFilterPayment] = useState('todos');
 
@@ -213,7 +209,6 @@
                 Usuario: '', Contrasena: '', FotoUrl: ''
             });
 
-            // --- STREAMING_CHUNK: Setting product parameters with local file uploads... ---
             const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
             const [uploadedProductPhoto, setUploadedProductPhoto] = useState(null);
 
@@ -230,15 +225,14 @@
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
 
-            // --- STREAMING_CHUNK: Local cache synchronization loops... ---
             useEffect(() => {
-                localStorage.setItem("zc_merchants_production_v10", JSON.stringify(merchants));
+                localStorage.setItem("zc_merchants_production_v11", JSON.stringify(merchants));
             }, [merchants]);
             useEffect(() => {
-                localStorage.setItem("zc_products_production_v10", JSON.stringify(products));
+                localStorage.setItem("zc_products_production_v11", JSON.stringify(products));
             }, [products]);
             useEffect(() => {
-                localStorage.setItem("zc_orders_production_v10", JSON.stringify(orders));
+                localStorage.setItem("zc_orders_production_v11", JSON.stringify(orders));
             }, [orders]);
             useEffect(() => {
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
@@ -247,7 +241,7 @@
             // Sync multi-tabs
             useEffect(() => {
                 const handleStorageChange = (e) => {
-                    if (e.key === "zc_orders_production_v10") {
+                    if (e.key === "zc_orders_production_v11") {
                         const updated = JSON.parse(e.newValue);
                         if (updated.length > orders.length) {
                             playChime();
@@ -296,26 +290,50 @@
                 }
             };
 
-            // --- STREAMING_CHUNK: Profile picture updates... ---
-            const handleStorePhotoChange = (e, merchantId) => {
+            const handleImageBase64 = (file) => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = (err) => reject(err);
+                    reader.readAsDataURL(file);
+                });
+            };
+
+            const handleStorePhotoChange = async (e, merchantId) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const blobUrl = URL.createObjectURL(file);
-                    const updated = merchants.map(m => m.ID_Comercio === merchantId ? { ...m, FotoUrl: blobUrl } : m);
-                    setMerchants(updated);
-                    showToast("📸 Foto de perfil de WhatsApp actualizada");
-                    
-                    const syncLog = { event: "merchant_photo_updated", ID_Comercio: merchantId, FotoUrl: blobUrl, timestamp: new Date().toISOString() };
-                    setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
-                    triggerWebhook(syncLog);
+                    try {
+                        const base64Str = await handleImageBase64(file);
+                        const updated = merchants.map(m => m.ID_Comercio === merchantId ? { ...m, FotoUrl: base64Str } : m);
+                        setMerchants(updated);
+                        showToast("📸 Foto de perfil de WhatsApp actualizada");
+                        
+                        const syncLog = { event: "merchant_photo_updated", ID_Comercio: merchantId, FotoUrl: "[BASE64_IMAGE_STRING]", timestamp: new Date().toISOString() };
+                        setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
+                        triggerWebhook({ ...syncLog, FotoUrl: base64Str });
+                    } catch (err) {
+                        showToast("❌ Error al convertir imagen");
+                    }
                 }
             };
 
-            // --- STREAMING_CHUNK: Authentication processing... ---
+            const handleMerchantRegisterPhoto = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    try {
+                        const base64Str = await handleImageBase64(file);
+                        setNewMerchant({ ...newMerchant, FotoUrl: base64Str });
+                        showToast("📸 Foto de perfil cargada");
+                    } catch (err) {
+                        showToast("❌ Error al procesar imagen");
+                    }
+                }
+            };
+
             const handleLogin = (e) => {
                 e.preventDefault();
                 setLoginError('');
-                const email = loginEmail.trim();
+                const email = loginEmail.trim().toLowerCase();
                 const pass = loginPass.trim();
 
                 if (email === "juan.guerrero@zeloxcloud.com" && pass === "Dfc2016") {
@@ -325,7 +343,7 @@
                     return;
                 }
 
-                const merchant = merchants.find(m => m.Usuario === email && m.Contrasena === pass);
+                const merchant = merchants.find(m => m.Usuario.toLowerCase() === email && m.Contrasena === pass);
                 if (merchant) {
                     if (merchant.Estatus === "Suspendido" || merchant.Estatus === "suspendido") {
                         setBlockedMerchantName(merchant.Nombre);
@@ -352,7 +370,7 @@
                     ...newMerchant,
                     ID_Comercio: slug,
                     Estatus: "Al corriente",
-                    FotoUrl: transformDriveUrl(newMerchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
+                    FotoUrl: newMerchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
                 };
                 setMerchants([...merchants, formatted]);
                 setShowNewMerchantModal(false);
@@ -387,13 +405,16 @@
                 });
             };
 
-            // --- STREAMING_CHUNK: Handle Product upload & dynamic URL creator... ---
-            const handleProductPhotoChange = (e) => {
+            const handleProductPhotoChange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const blobUrl = URL.createObjectURL(file);
-                    setUploadedProductPhoto(blobUrl);
-                    showToast("📸 Foto de producto lista para cargarse");
+                    try {
+                        const base64Str = await handleImageBase64(file);
+                        setUploadedProductPhoto(base64Str);
+                        showToast("📸 Foto de producto lista para cargarse");
+                    } catch (err) {
+                        showToast("❌ Error al convertir foto de producto");
+                    }
                 }
             };
 
@@ -401,7 +422,6 @@
                 e.preventDefault();
                 if (!newProduct.Nombre_Producto || !newProduct.Precio) return;
                 
-                // If a real photo was uploaded, use that blob URL as image resource, otherwise use chosen emoji
                 const finalImageSource = uploadedProductPhoto ? uploadedProductPhoto : newProduct.Imagen;
 
                 const prod = {
@@ -416,7 +436,6 @@
                 setNewProduct({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
                 setUploadedProductPhoto(null);
                 
-                // Reset file input element
                 const fileInput = document.getElementById('file-upload-prod');
                 if (fileInput) fileInput.value = '';
 
@@ -460,7 +479,6 @@
             const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
             const finalTotal = cartTotal + deliveryFee + currentTipVal;
 
-            // --- STREAMING_CHUNK: Finalizing checkouts and triggers... ---
             const handlePlaceOrder = (merchant) => {
                 if (!deliveryAddress.trim()) {
                     setCustomAlert({
@@ -569,7 +587,6 @@
             const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
             const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
 
-            // --- STREAMING_CHUNK: Interface Layout Framework... ---
             return (
                 <div className="flex flex-col min-h-screen justify-between relative">
                     {notificationToast && (
@@ -618,7 +635,7 @@
                                 )
                             )}
 
-                            {/* Dropdown Menu replacing horizontal line list of shops */}
+                            {/* Dropdown Menu replacing horizontal list of shops */}
                             <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs">
                                 <span className="px-2 text-slate-400 font-bold"><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
@@ -713,7 +730,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Super administrator console workspace... --- */}
+                        {/* VIEW: SUPER ADMIN */}
                         {view === 'super_admin' && (
                             <div>
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -839,7 +856,7 @@
                                             </div>
                                         </div>
 
-                                        {/* --- STREAMING_CHUNK: Sorting and filtering of global logs... --- */}
+                                        {/* Sorting and filtering of global logs */}
                                         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                                             <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
                                                 <h3 className="font-bold text-lg text-white">Historial Global de Transacciones</h3>
@@ -964,7 +981,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Create merchant dialog modal... --- */}
+                        {/* Create merchant dialog modal */}
                         {showNewMerchantModal && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
@@ -988,10 +1005,23 @@
                                                 </select>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Drive / Enlace Directo)</label>
-                                            <input type="url" placeholder="Pegar enlace aquí o subir abajo" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
+                                        
+                                        {/* Register Merchant Photo Selector */}
+                                        <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                                            <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">Cargar Foto del Comercio (Galería/Cámara)</label>
+                                            <input 
+                                                type="file" 
+                                                accept="image/*" 
+                                                onChange={handleMerchantRegisterPhoto}
+                                                className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                            />
+                                            {newMerchant.FotoUrl && (
+                                                <div className="relative mt-2 w-20 h-20 rounded-lg overflow-hidden border border-amber-500/20">
+                                                    <img src={newMerchant.FotoUrl} alt="Preview" className="w-full h-full object-cover" />
+                                                </div>
+                                            )}
                                         </div>
+
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
@@ -1032,7 +1062,7 @@
                                     if (!merchant) return null;
                                     return (
                                         <div>
-                                            {/* --- STREAMING_CHUNK: WhatsApp-style profile photo update section... --- */}
+                                            {/* WhatsApp-style profile photo update section */}
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                                                 <div className="flex items-center gap-4">
                                                     {/* Profile Picture with Camera hover edit overlay */}
@@ -1135,7 +1165,7 @@
                                                 </div>
                                             )}
 
-                                            {/* --- STREAMING_CHUNK: Rendering expanded product addition with photos... --- */}
+                                            {/* MY CATALOGUE SECTION */}
                                             {activeMerchantTab === 'catalogo' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
@@ -1207,7 +1237,7 @@
                                                         </form>
                                                     </div>
 
-                                                    {/* --- STREAMING_CHUNK: Rendering products table lists... --- */}
+                                                    {/* Product Catalog view */}
                                                     <div className="lg:col-span-2 space-y-4">
                                                         <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
                                                             <h3 className="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
@@ -1293,7 +1323,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Public digital storefront rendering... --- */}
+                        {/* VIEW: SHOP */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
@@ -1320,7 +1350,6 @@
                                                             <div key={p.ID_Producto} className="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-start">
-                                                                        {/* Dynamically checks if image is custom photo or emoji icon */}
                                                                         <span className="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-center w-14 h-14 overflow-hidden">
                                                                             {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
                                                                         </span>
@@ -1336,7 +1365,7 @@
                                                 </div>
                                             </div>
 
-                                            {/* Shopping Cart Side panel */}
+                                            {/* Shopping Cart checkout page */}
                                             <div className="space-y-6">
                                                 <div className="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
                                                     <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
@@ -1408,7 +1437,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Success dialog configuration... --- */}
+                        {/* Modals for alerting client checkout */}
                         {orderConfirmedModal && lastPlacedOrder && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
@@ -1495,7 +1524,6 @@
             );
         }
 
-        // --- STREAMING_CHUNK: Bootstrapping react on root node... ---
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<ZeloxCloudApp />);
     </script>
