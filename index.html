@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -9,8 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#09090b">
-    <link rel="apple-touch-icon" href="ZELOX_CLOUD.jpeg">
-
+    
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -70,7 +69,6 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Base de Datos Real alineada 1:1 con Google Sheets
         const defaultMerchants = [
             { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "dfc_cloud1@zeloxcloud.com", Contrasena: "DfCc1Oud1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
             { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620" },
@@ -95,7 +93,21 @@
             { ID_Producto: "p10", ID_Comercio: "abarrotes-lara", Nombre_Producto: "Cartera de Huevo Blanco (30 pzs)", Precio: 88, Descripcion: "Huevo fresco seleccionado de la mejor calidad.", Imagen: "🥚" }
         ];
 
-        // Web Audio chime generator for order notifications
+        const transformDriveUrl = (url) => {
+            if (!url) return '';
+            const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
+            const match = url.match(driveRegex);
+            if (match && match[1]) {
+                return `https://docs.google.com/uc?export=view&id=${match[1]}`;
+            }
+            const driveIdParam = /[?&]id=([a-zA-Z0-9_-]+)/;
+            const matchParam = url.match(driveIdParam);
+            if (matchParam && matchParam[1]) {
+                return `https://docs.google.com/uc?export=view&id=${matchParam[1]}`;
+            }
+            return url;
+        };
+
         const playChime = () => {
             try {
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -111,11 +123,10 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio contextual alert pending user tap.", e);
+                console.log("Audio contextual alert pending.", e);
             }
         };
 
-        // Vectorial fallback logo component
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -123,8 +134,6 @@
                     <div className={`${className} bg-slate-900 border border-amber-500/30 rounded-xl flex items-center justify-center p-1.5 shadow-lg relative`}>
                         <svg viewBox="0 0 100 100" className="w-full h-full text-amber-500" fill="currentColor">
                             <path d="M50 15 C38 15 32 25 38 35 C28 38 28 52 38 55 C42 55 72 55 75 51 C82 48 80 35 70 35 C68 25 58 15 50 15 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-                            <path d="M42 45 L50 35 L58 45" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
-                            <path d="M50 35 L50 65" fill="none" stroke="currentColor" strokeWidth="6" />
                         </svg>
                     </div>
                 );
@@ -139,7 +148,6 @@
             );
         }
 
-        // Main App State
         function ZeloxCloudApp() {
             const [merchants, setMerchants] = useState(() => {
                 const stored = localStorage.getItem("zc_merchants_production_v9");
@@ -152,6 +160,9 @@
             const [orders, setOrders] = useState(() => {
                 const stored = localStorage.getItem("zc_orders_production_v9");
                 return stored ? JSON.parse(stored) : [];
+            });
+            const [webhookUrl, setWebhookUrl] = useState(() => {
+                return localStorage.getItem("zc_webhook_url_production") || "";
             });
 
             const [view, setView] = useState('login');
@@ -166,6 +177,7 @@
             const [showBlockedScreen, setShowBlockedScreen] = useState(false);
             const [blockedMerchantName, setBlockedMerchantName] = useState('');
             const [promoIdea, setPromoIdea] = useState('');
+            const [targetNetworks, setTargetNetworks] = useState({ facebook: true, instagram: true, whatsapp: true });
 
             // Filters
             const [filterMerchant, setFilterMerchant] = useState('todos');
@@ -202,8 +214,11 @@
             useEffect(() => {
                 localStorage.setItem("zc_orders_production_v9", JSON.stringify(orders));
             }, [orders]);
+            useEffect(() => {
+                localStorage.setItem("zc_webhook_url_production", webhookUrl);
+            }, [webhookUrl]);
 
-            // Sync channel between tabs for real-time sound/popups
+            // Realtime listeners
             useEffect(() => {
                 const handleStorageChange = (e) => {
                     if (e.key === "zc_orders_production_v9") {
@@ -219,7 +234,7 @@
                 return () => window.removeEventListener("storage", handleStorageChange);
             }, [orders]);
 
-            // Direct route handler for ?shop=id-comercio
+            // QR Routing
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const shopParam = params.get('shop');
@@ -228,7 +243,7 @@
                     if (exists) {
                         setCurrentShopId(shopParam);
                         setView('shop');
-                        showToast(`🏪 Cargando Tienda Digital: ${shopParam}`);
+                        showToast(`🏪 Tienda Abierta: ${shopParam}`);
                     }
                 }
             }, [merchants]);
@@ -236,6 +251,23 @@
             const showToast = (message) => {
                 setNotificationToast(message);
                 setTimeout(() => setNotificationToast(null), 4000);
+            };
+
+            const triggerWebhook = async (payload) => {
+                if (!webhookUrl) {
+                    console.log("No Webhook URL configured. Simulated Payload:", payload);
+                    return;
+                }
+                try {
+                    await fetch(webhookUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    showToast("📤 Sincronizado con Make.com");
+                } catch (e) {
+                    console.error("Webhook trigger failed", e);
+                }
             };
 
             const handleLogin = (e) => {
@@ -247,7 +279,7 @@
                 if (email === "juan.guerrero@zeloxcloud.com" && pass === "Dfc2016") {
                     setLoggedUser({ email, role: 'super_admin' });
                     setView('super_admin');
-                    showToast("🔓 Acceso de Super Administrador Autorizado");
+                    showToast("🔓 Consola Administrativa Autorizada");
                     return;
                 }
 
@@ -261,24 +293,16 @@
                     setLoggedUser({ email, role: 'merchant', merchantId: merchant.ID_Comercio });
                     setView('merchant');
                     setActiveMerchantTab('pedidos');
-                    showToast(`💼 Panel de Control Iniciado: ${merchant.Nombre}`);
+                    showToast(`💼 Panel de Comercio: ${merchant.Nombre}`);
                     return;
                 }
-                setLoginError('Credenciales incorrectas. Verifique e intente de nuevo.');
+                setLoginError('Credenciales incorrectas. Intente de nuevo.');
             };
 
-            const handleLogout = () => {
-                setLoggedUser(null);
-                setView('login');
-                setLoginEmail('');
-                setLoginPass('');
-            };
-
-            // Super Admin: Register new client
             const createMerchant = (e) => {
                 e.preventDefault();
                 if (!newMerchant.Nombre || !newMerchant.Contacto || !newMerchant.Usuario || !newMerchant.Contrasena) {
-                    showToast("⚠️ Complete todos los campos requeridos.");
+                    showToast("⚠️ Complete todos los campos obligatorios.");
                     return;
                 }
                 const slug = newMerchant.Nombre.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
@@ -286,10 +310,9 @@
                     ...newMerchant,
                     ID_Comercio: slug,
                     Estatus: "Al corriente",
-                    FotoUrl: newMerchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
+                    FotoUrl: transformDriveUrl(newMerchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
                 };
-                const updated = [...merchants, formatted];
-                setMerchants(updated);
+                setMerchants([...merchants, formatted]);
                 setShowNewMerchantModal(false);
                 setNewMerchant({
                     Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
@@ -299,24 +322,24 @@
 
                 const syncLog = { event: "merchant_created", ID_Comercio: slug, Nombre: formatted.Nombre, timestamp: new Date().toISOString() };
                 setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
-                showToast(`🚀 Comercio "${formatted.Nombre}" registrado exitosamente`);
+                triggerWebhook(syncLog);
+                showToast(`🚀 Comercio "${formatted.Nombre}" registrado`);
             };
 
             const toggleMerchantStatus = (id, currentStatus) => {
                 const nextStatus = currentStatus === "Al corriente" || currentStatus === "activo" ? "Suspendido" : "Al corriente";
                 const updated = merchants.map(m => m.ID_Comercio === id ? { ...m, Estatus: nextStatus } : m);
                 setMerchants(updated);
-                showToast(`Estado de licencia de ${id} actualizado a: ${nextStatus}`);
+                showToast(`Estatus actualizado a: ${nextStatus}`);
             };
 
             const deleteMerchant = (id) => {
-                if (confirm("¿Deseas eliminar definitivamente este comercio de la red ZeloxCloud?")) {
+                if (confirm("¿Eliminar definitivamente este comercio?")) {
                     setMerchants(merchants.filter(m => m.ID_Comercio !== id));
-                    showToast("❌ Registro de comercio removido.");
+                    showToast("❌ Registro removido.");
                 }
             };
 
-            // Merchant Catalog Management
             const handleAddProduct = (e) => {
                 e.preventDefault();
                 if (!newProduct.Nombre_Producto || !newProduct.Precio) return;
@@ -330,7 +353,7 @@
                 };
                 setProducts([...products, prod]);
                 setNewProduct({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
-                showToast("✅ Producto añadido al catálogo comercial");
+                showToast("✅ Producto añadido");
             };
 
             const deleteProduct = (id) => {
@@ -345,49 +368,16 @@
                     }
                     return o;
                 }));
-                showToast("📦 Estado operativo del pedido actualizado");
+                showToast("📦 Estado de pedido actualizado");
             };
 
-            // Marketing Campaign with AI and GSheets webhook trigger
-            const runAiAdvertising = (merchant) => {
-                if (!promoIdea.trim()) {
-                    alert("⚠️ Ingrese una idea comercial o promoción del día.");
-                    return;
-                }
-                showToast("🤖 Generando copy y estructura con ZeloxCloud IA...");
-                setTimeout(() => {
-                    const generatedAdText = `📢 ¡OFERTA LIMITADA DE ${merchant.Nombre.toUpperCase()}! 🌟
-💡 PROPUESTA: ${promoIdea}
-
-🛒 ¡Haz tu pedido digital hoy mismo!:
-🔗 ${window.location.origin}${window.location.pathname}?shop=${merchant.ID_Comercio}
-
-📞 Contacto: ${merchant.Telefono}
-🤖 Campaña inteligente distribuida mediante Webhook de Make a tus redes vinculadas.`;
-
-                    alert(`🤖 ZeloxCloud IA Publicitaria:\n\nSe ha disparado tu campaña publicitaria con éxito:\n\n${generatedAdText}`);
-                    
-                    const payloadLog = {
-                        action: "AI_Autonomous_Ad",
-                        merchantId: merchant.ID_Comercio,
-                        ideaCaptured: promoIdea,
-                        whatsappGroupId: merchant.WhatsApp_Group_ID,
-                        facebookPageId: merchant.Facebook_Page_ID,
-                        generatedAdCopy: generatedAdText,
-                        timestamp: new Date().toISOString()
-                    };
-                    setWebhookLog(prev => [JSON.stringify(payloadLog, null, 2), ...prev]);
-                    setPromoIdea('');
-                }, 1000);
-            };
-
-            // Shopping Cart Logic
             const addToCart = (prod) => {
                 setCart(prev => {
                     const currentQty = prev[prod.ID_Producto]?.qty || 0;
                     return { ...prev, [prod.ID_Producto]: { ...prod, qty: currentQty + 1 } };
                 });
             };
+
             const removeFromCart = (prodId) => {
                 setCart(prev => {
                     const copy = { ...prev };
@@ -405,13 +395,13 @@
 
             const handlePlaceOrder = (merchant) => {
                 if (!deliveryAddress.trim()) {
-                    alert("⚠️ La dirección de entrega es obligatoria.");
+                    alert("La dirección de entrega es obligatoria.");
                     return;
                 }
                 if (paymentMethod === "Efectivo") {
                     const cash = parseFloat(cashAmount);
                     if (isNaN(cash) || cash < finalTotal) {
-                        alert(`⚠️ Ingrese un monto de efectivo válido para liquidar $${finalTotal.toFixed(2)} MXN.`);
+                        alert(`Ingrese un monto de efectivo válido.`);
                         return;
                     }
                 }
@@ -428,12 +418,11 @@
                     Propina: Math.round(currentTipVal),
                     Envio: deliveryFee,
                     Estado: "Nuevo",
-                    Timestamp: "Justo ahora"
+                    Timestamp: new Date().toLocaleString()
                 };
 
                 const updatedOrders = [orderObj, ...orders];
                 setOrders(updatedOrders);
-                localStorage.setItem("zc_orders_production_v9", JSON.stringify(updatedOrders));
 
                 const makePayload = {
                     event: "new_order",
@@ -450,12 +439,39 @@
                     Facebook_Page_ID: merchant.Facebook_Page_ID
                 };
                 setWebhookLog(prev => [JSON.stringify(makePayload, null, 2), ...prev]);
+                triggerWebhook(makePayload);
 
                 setLastPlacedOrder(orderObj);
                 setOrderConfirmedModal(true);
                 setCart({});
                 setDeliveryAddress('');
                 setCashAmount('');
+            };
+
+            const runAiAdvertising = (merchant) => {
+                if (!promoIdea.trim()) {
+                    alert("⚠️ Ingrese una idea de promoción para que trabaje la IA.");
+                    return;
+                }
+                const selectedChs = Object.keys(targetNetworks).filter(k => targetNetworks[k]);
+                const dynamicStoreLink = `${window.location.origin}${window.location.pathname}?shop=${merchant.ID_Comercio}`;
+
+                const payloadLog = {
+                    action: "AI_Autonomous_Ad",
+                    merchantId: merchant.ID_Comercio,
+                    merchantName: merchant.Nombre,
+                    ideaCaptured: promoIdea,
+                    socialNetworksSelected: selectedChs,
+                    whatsappGroupId: merchant.WhatsApp_Group_ID,
+                    facebookPageId: merchant.Facebook_Page_ID,
+                    promptInstructionsChatGPT: `Redacta una campaña publicitaria de alta conversión para las redes: ${selectedChs.join(", ")}. Adicionalmente, incluye las instrucciones para generar una fotografía publicitaria profesional para esta promoción: "${promoIdea}". Asegúrate de incorporar el enlace del comercio: ${dynamicStoreLink}`,
+                    timestamp: new Date().toISOString()
+                };
+
+                setWebhookLog(prev => [JSON.stringify(payloadLog, null, 2), ...prev]);
+                triggerWebhook(payloadLog);
+                alert(`🤖 ZeloxCloud IA Publicitaria:\n\nSe ha disparado tu propuesta comercial hacia Make.com para procesar con ChatGPT y crear la publicación con foto para ${selectedChs.join(", ")}.`);
+                setPromoIdea('');
             };
 
             const filteredOrders = orders.filter(o => {
@@ -468,9 +484,6 @@
             const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
             const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
 
-            const activeMerchantContext = merchants.find(m => m.ID_Comercio === currentShopId) || merchants[0];
-            const dynamicStoreLink = `${window.location.origin}${window.location.pathname}?shop=${activeMerchantContext.ID_Comercio}`;
-
             return (
                 <div class="flex flex-col min-h-screen justify-between relative">
                     {notificationToast && (
@@ -482,6 +495,13 @@
 
                     <header class="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
                         <div class="flex items-center gap-3.5">
+                            <button 
+                                onClick={() => { setView('login'); window.history.pushState({}, '', window.location.pathname); }} 
+                                class="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center"
+                                title="Volver a la pantalla principal"
+                            >
+                                <i class="fa-solid fa-house"></i>
+                            </button>
                             <BrandLogo className="w-11 h-11" />
                             <div>
                                 <h1 class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
@@ -498,7 +518,7 @@
                                         <i class="fa-solid fa-circle-user text-amber-500 mr-2"></i>
                                         {loggedUser.email}
                                     </span>
-                                    <button onClick={handleLogout} class="bg-red-500/10 hover:bg-red-500 text-red-400 px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
+                                    <button onClick={handleLogout} class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
                                         <i class="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
@@ -510,22 +530,34 @@
                                 )
                             )}
 
-                            <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-lg border border-slate-800 text-xs">
-                                <span class="px-2 text-slate-400">Ver tienda:</span>
-                                {merchants.map(m => (
-                                    <button 
-                                        key={m.ID_Comercio}
-                                        onClick={() => { setCurrentShopId(m.ID_Comercio); setView('shop'); }}
-                                        class={`px-2 py-1 rounded transition ${currentShopId === m.ID_Comercio && view === 'shop' ? 'bg-amber-500 text-slate-950 font-bold' : 'hover:bg-slate-800 text-slate-300'}`}
-                                    >
-                                        {m.Nombre.split(' ')[0]}
-                                    </button>
-                                ))}
+                            <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 text-xs">
+                                <span class="px-2 text-slate-400 font-bold"><i class="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
+                                <select 
+                                    value={view === 'shop' ? currentShopId : ''}
+                                    onChange={(e) => {
+                                        if (e.target.value) {
+                                            setCurrentShopId(e.target.value);
+                                            setView('shop');
+                                            const newUrl = `${window.location.origin}${window.location.pathname}?shop=${e.target.value}`;
+                                            window.history.pushState({path: newUrl}, '', newUrl);
+                                        } else {
+                                            setView('login');
+                                            window.history.pushState({}, '', window.location.pathname);
+                                        }
+                                    }}
+                                    class="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-md focus:outline-none focus:border-amber-500 font-bold"
+                                >
+                                    <option value="">Seleccionar...</option>
+                                    {merchants.map(m => (
+                                        <option key={m.ID_Comercio} value={m.ID_Comercio}>{m.Nombre}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </header>
 
                     <main class="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
+                        {}
                         {view === 'login' && (
                             <div class="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
                                 <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
@@ -589,6 +621,7 @@
                             </div>
                         )}
 
+                        {}
                         {view === 'super_admin' && (
                             <div>
                                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -636,7 +669,7 @@
                                                     {merchants.map((m) => (
                                                         <tr key={m.ID_Comercio} class="hover:bg-slate-800/40 transition">
                                                             <td class="p-4 flex items-center gap-3">
-                                                                <img src={m.FotoUrl} alt={m.Nombre} class="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                                <img src={transformDriveUrl(m.FotoUrl)} alt={m.Nombre} class="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
                                                                 <div>
                                                                     <div class="font-bold text-white text-base">{m.Nombre}</div>
                                                                     <div class="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
@@ -724,7 +757,7 @@
                                                     </thead>
                                                     <tbody class="divide-y divide-slate-800 text-sm">
                                                         {filteredOrders.length === 0 ? (
-                                                            <tr><td colSpan="5" class="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros de búsqueda.</td></tr>
+                                                            <tr><td colSpan="5" class="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
                                                         ) : (
                                                             filteredOrders.map(o => {
                                                                 const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
@@ -748,12 +781,26 @@
 
                                 {activeAdminTab === 'db' && (
                                     <div class="space-y-6">
-                                        <div class="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800">
-                                            <h3 class="font-bold text-lg text-white mb-4"><i class="fa-solid fa-database text-amber-500 mr-2"></i>Estructura Sincronizada con Google Sheets</h3>
-                                            <p class="text-xs text-slate-400 mb-4 leading-relaxed">
-                                                Representación visual exacta de las pestañas mapeadas en tu documento de Google Drive.
-                                            </p>
+                                        <div class="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800 space-y-4">
+                                            <h3 class="font-bold text-lg text-white"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
+                                            <div class="max-w-xl">
+                                                <label class="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">URL de Webhook Maestro (Make.com)</label>
+                                                <div class="flex gap-2">
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="https://hook.us2.make.com/..." 
+                                                        value={webhookUrl} 
+                                                        onChange={(e) => setWebhookUrl(e.target.value)} 
+                                                        class="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500"
+                                                    />
+                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition">
+                                                        Guardar
+                                                    </button>
+                                                </div>
+                                                <p class="text-[10px] text-slate-500 mt-2">Esta URL recibirá todos los disparos JSON para actualizar tu Google Sheets e interactuar de forma bilateral.</p>
+                                            </div>
                                         </div>
+
                                         <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
                                             <div class="bg-emerald-950/30 p-4 border-b border-slate-800 flex justify-between items-center text-xs font-mono">
                                                 <span class="font-bold text-emerald-400">Tabla: Configuracion_Comercios</span>
@@ -769,8 +816,6 @@
                                                             <th class="p-2 border-r border-slate-800">Contrasena</th>
                                                             <th class="p-2 border-r border-slate-800">Estatus</th>
                                                             <th class="p-2 border-r border-slate-800">Categoria</th>
-                                                            <th class="p-2 border-r border-slate-800">WhatsApp_Group_ID</th>
-                                                            <th class="p-2 border-r border-slate-800">Facebook_Page_ID</th>
                                                             <th class="p-2">Contacto</th>
                                                         </tr>
                                                     </thead>
@@ -783,8 +828,6 @@
                                                                 <td class="p-2 border-r border-slate-800">{m.Contrasena}</td>
                                                                 <td class="p-2 border-r border-slate-800">{m.Estatus}</td>
                                                                 <td class="p-2 border-r border-slate-800">{m.Categoria}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.WhatsApp_Group_ID || 'N/A'}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Facebook_Page_ID || 'N/A'}</td>
                                                                 <td class="p-2">{m.Contacto}</td>
                                                             </tr>
                                                         ))}
@@ -792,11 +835,12 @@
                                                 </table>
                                             </div>
                                         </div>
+
                                         <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h4 class="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Simulador Webhook Live Stream (Sincronización Make)</h4>
+                                            <h4 class="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Historial de Salida JSON (Webhook live-stream)</h4>
                                             <div class="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800">
                                                 {webhookLog.length === 0 ? (
-                                                    <span class="text-slate-600 italic">Esperando peticiones y disparos en vivo... Realice una simulación de compra o publicidad IA para ver el JSON de salida.</span>
+                                                    <span class="text-slate-600 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
                                                 ) : (
                                                     webhookLog.map((log, index) => <pre key={index} class="text-emerald-400 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 overflow-x-auto mt-2">{log}</pre>)
                                                 )}
@@ -831,13 +875,13 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Opcional)</label>
-                                            <input type="url" placeholder="https://images.unsplash.com/..." value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
+                                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Drive / Enlace Directo)</label>
+                                            <input type="url" placeholder="Pegar enlace aquí" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
                                         </div>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
-                                                <input type="text" placeholder="Nombre de la persona" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <input type="text" placeholder="Nombre" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
                                                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Teléfono Principal *</label>
@@ -866,6 +910,7 @@
                             </div>
                         )}
 
+                        {}
                         {view === 'merchant' && (
                             <div>
                                 {(() => {
@@ -875,7 +920,7 @@
                                         <div>
                                             <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                                                 <div class="flex items-center gap-4">
-                                                    <img src={merchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                    <img src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
                                                     <div>
                                                         <div class="flex items-center gap-2.5">
                                                             <span class="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
@@ -1021,7 +1066,28 @@
                                                     <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
                                                         <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i class="fa-solid fa-robot"></i></div>
                                                         <h3 class="font-bold text-lg text-white">Marketing Inteligente IA</h3>
-                                                        <textarea placeholder="Ej: Hoy 2x1 en consultorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
+                                                        <p class="text-xs text-slate-400 mt-1">Escribe tu idea comercial y selecciona a qué redes deseas enviarla para que ChatGPT genere tu posteo con fotografía publicitaria.</p>
+                                                        
+                                                        <textarea placeholder="Ej: Hoy 10% de descuento en auditorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
+                                                        
+                                                        <div class="space-y-2 text-xs text-slate-300">
+                                                            <p class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Redes de Destino:</p>
+                                                            <div class="flex flex-wrap gap-3">
+                                                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    Facebook
+                                                                </label>
+                                                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.instagram} onChange={(e) => setTargetNetworks({...targetNetworks, instagram: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    Instagram
+                                                                </label>
+                                                                <label class="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.whatsapp} onChange={(e) => setTargetNetworks({...targetNetworks, whatsapp: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    WhatsApp
+                                                                </label>
+                                                            </div>
+                                                        </div>
+
                                                         <button onClick={() => runAiAdvertising(merchant)} class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
                                                     </div>
 
@@ -1050,6 +1116,7 @@
                             </div>
                         )}
 
+                        {}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
@@ -1059,7 +1126,7 @@
                                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                             <div class="lg:col-span-2 space-y-6">
                                                 <div class="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
-                                                    <img src={merchant.FotoUrl} alt={merchant.Nombre} class="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
+                                                    <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} class="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
                                                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
                                                     <div class="relative z-20 space-y-2">
                                                         <span class="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
@@ -1191,9 +1258,3 @@
     </script>
 </body>
 </html>
-```
-eof
-
-¡Listo, Juan! He colocado las instrucciones paso a paso muy detalladas con los nombres en español en el panel de la derecha y el código completo de la app limpia y lista en el archivo `index.html`. 
-
-Una vez que subas este archivo a tu GitHub como te indico en la guía, estarás listo para configurar Netlify y disfrutar de tu aplicación en línea. Házmelo saber si lograste subirlo correctamente o si tienes alguna duda técnica en el camino.
