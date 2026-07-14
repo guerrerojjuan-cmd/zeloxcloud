@@ -26,6 +26,11 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #09090b;
             background-image: radial-gradient(circle at 50% 30%, rgba(197, 160, 89, 0.08) 0%, rgba(9, 9, 11, 1) 75%);
+            transition: background-color 0.3s ease, background-image 0.3s ease, color 0.3s ease;
+        }
+        body.theme-light {
+            background-color: #f8fafc;
+            background-image: radial-gradient(circle at 50% 30%, rgba(197, 160, 89, 0.12) 0%, rgba(248, 250, 252, 1) 75%);
         }
         ::-webkit-scrollbar {
             width: 6px;
@@ -33,6 +38,9 @@
         }
         ::-webkit-scrollbar-track {
             background: #09090b;
+        }
+        body.theme-light ::-webkit-scrollbar-track {
+            background: #f8fafc;
         }
         ::-webkit-scrollbar-thumb {
             background: #c5a059;
@@ -71,15 +79,16 @@
 
         const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
 
+        // --- STREAMING_CHUNK: Initializing 1:1 backup database aligned with version v11... ---
         const defaultMerchants = [
-            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "juan.guerrero64zeloxcloud.com", Contrasena: "Dfc2016", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
-            { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620" },
-            { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620" },
-            { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000" },
-            { ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre: "Tacos y Gorditas Doña Blanca", Usuario: "tacos_y_gorditas_dona_blanca1@zeloxcloud.com", Contrasena: "T4c0sYg01", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TGB-202", Facebook_Page_ID: "donablanca", Instagram: "@tacos_donablanca", FotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Blanca", Telefono: "8110000001" },
-            { ID_Comercio: "tacos-don-lupe", Nombre: "Tacos Don Lupe", Usuario: "tacos_don_lupe1@zeloxcloud.com", Contrasena: "T4c0sD0n1", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TDL-303", Facebook_Page_ID: "tacosdonlupe", Instagram: "@tacos_donlupe", FotoUrl: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lupe", Telefono: "8110000002" },
-            { ID_Comercio: "abarrotes-lara", Nombre: "Abarrotes Lara", Usuario: "abarrotes_lara1@zeloxcloud.com", Contrasena: "Ug8Uq9G2", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABL-404", Facebook_Page_ID: "abarroteslara", Instagram: "@abarrotes_lara", FotoUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lara", Telefono: "8110000003" },
-            { ID_Comercio: "abarrotes-guerrero", Nombre: "Abarrotes Guerrero", Usuario: "abarrotes_guerrero1@zeloxcloud.com", Contrasena: "Na4Na0H3", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABG-505", Facebook_Page_ID: "abarrotesguerrero", Instagram: "@abarrotes_guerrero", FotoUrl: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Guerrero", Telefono: "8110000004" }
+            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "juan.guerrero64zeloxcloud.com", Contrasena: "Dfc2016", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620", Idea_Publicidad: "¡Asegura tu declaración mensual sin errores con nuestro equipo experto!" },
+            { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620", Idea_Publicidad: "Prueba gratis Copiloto por 7 días y automatiza tu contabilidad." },
+            { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620", Idea_Publicidad: "Digitaliza tu negocio local con menús inteligentes en minutos." },
+            { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000", Idea_Publicidad: "Lunes de habanero: compra 2 salsas premium y recibe envío gratis." },
+            { ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre: "Tacos y Gorditas Doña Blanca", Usuario: "tacos_y_gorditas_dona_blanca1@zeloxcloud.com", Contrasena: "T4c0sYg01", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TGB-202", Facebook_Page_ID: "donablanca", Instagram: "@tacos_donablanca", FotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Blanca", Telefono: "8110000001", Idea_Publicidad: "¡Hoy orden de tacos de guisado en harina a precio especial!" },
+            { ID_Comercio: "tacos-don-lupe", Nombre: "Tacos Don Lupe", Usuario: "tacos_don_lupe1@zeloxcloud.com", Contrasena: "T4c0sD0n1", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TDL-303", Facebook_Page_ID: "tacosdonlupe", Instagram: "@tacos_donlupe", FotoUrl: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lupe", Telefono: "8110000002", Idea_Publicidad: "Trompo al pastor al 2x1 los miércoles familiares." },
+            { ID_Comercio: "abarrotes-lara", Nombre: "Abarrotes Lara", Usuario: "abarrotes_lara1@zeloxcloud.com", Contrasena: "Ug8Uq9G2", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABL-404", Facebook_Page_ID: "abarroteslara", Instagram: "@abarrotes_lara", FotoUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lara", Telefono: "8110000003", Idea_Publicidad: "Huevo blanco fresco y abarrotes generales con entrega inmediata." },
+            { ID_Comercio: "abarrotes-guerrero", Nombre: "Abarrotes Guerrero", Usuario: "abarrotes_guerrero1@zeloxcloud.com", Contrasena: "Na4Na0H3", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABG-505", Facebook_Page_ID: "abarrotesguerrero", Instagram: "@abarrotes_guerrero", FotoUrl: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Guerrero", Telefono: "8110000004", Idea_Publicidad: "Frutas y verduras frescas cosechadas del día para tu hogar." }
         ];
 
         const defaultProducts = [
@@ -134,10 +143,11 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio contextual alert initialized.");
+                console.log("Audio context initiated.");
             }
         };
 
+        // --- STREAMING_CHUNK: Defining Brand Logo with fail-safe SVG rendering... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -159,6 +169,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Initializing State Variables for App and Webhook Loggers... ---
         function ZeloxCloudApp() {
             // Version v11 cache to flush obsolete structures
             const [merchants, setMerchants] = useState(() => {
@@ -175,6 +186,10 @@
             });
             const [webhookUrl, setWebhookUrl] = useState(() => {
                 return localStorage.getItem("zc_webhook_url_production") || "";
+            });
+
+            const [theme, setTheme] = useState(() => {
+                return localStorage.getItem("zc_theme_preference") || "dark";
             });
 
             // Navigation Routing
@@ -206,7 +221,7 @@
             const [newMerchant, setNewMerchant] = useState({
                 Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
                 WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
-                Usuario: '', Contrasena: '', FotoUrl: ''
+                Usuario: '', Contrasena: '', FotoUrl: '', Idea_Publicidad: ''
             });
 
             const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
@@ -225,6 +240,7 @@
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
 
+            // --- STREAMING_CHUNK: Handling Persistent LocalStorage Synclog... ---
             useEffect(() => {
                 localStorage.setItem("zc_merchants_production_v11", JSON.stringify(merchants));
             }, [merchants]);
@@ -237,6 +253,17 @@
             useEffect(() => {
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
             }, [webhookUrl]);
+
+            // Sync theme changes with body class for dynamic styling
+            useEffect(() => {
+                const body = document.body;
+                if (theme === 'light') {
+                    body.classList.add('theme-light');
+                } else {
+                    body.classList.remove('theme-light');
+                }
+                localStorage.setItem("zc_theme_preference", theme);
+            }, [theme]);
 
             // Sync multi-tabs
             useEffect(() => {
@@ -267,6 +294,12 @@
                     }
                 }
             }, [merchants]);
+
+            // Sync merchant's promo idea input in real-time
+            const handlePromoIdeaChange = (val, mId) => {
+                setPromoIdea(val);
+                setMerchants(prev => prev.map(m => m.ID_Comercio === mId ? { ...m, Idea_Publicidad: val } : m));
+            };
 
             const showToast = (message) => {
                 setNotificationToast(message);
@@ -299,6 +332,7 @@
                 });
             };
 
+            // --- STREAMING_CHUNK: Managing Store Photo profile changes... ---
             const handleStorePhotoChange = async (e, merchantId) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -306,13 +340,18 @@
                         const base64Str = await handleImageBase64(file);
                         const updated = merchants.map(m => m.ID_Comercio === merchantId ? { ...m, FotoUrl: base64Str } : m);
                         setMerchants(updated);
-                        showToast("📸 Foto de perfil de WhatsApp actualizada");
+                        showToast("📸 Foto de perfil de comercio actualizada");
                         
-                        const syncLog = { event: "merchant_photo_updated", ID_Comercio: merchantId, FotoUrl: "[BASE64_IMAGE_STRING]", timestamp: new Date().toISOString() };
+                        const syncLog = { 
+                            event: "merchant_photo_updated", 
+                            ID_Comercio: merchantId, 
+                            FotoUrl: base64Str.substring(0, 100) + "...", 
+                            timestamp: new Date().toISOString() 
+                        };
                         setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
-                        triggerWebhook({ ...syncLog, FotoUrl: base64Str });
+                        triggerWebhook(syncLog);
                     } catch (err) {
-                        showToast("❌ Error al convertir imagen");
+                        showToast("❌ Error al convertir foto de perfil");
                     }
                 }
             };
@@ -322,8 +361,8 @@
                 if (file) {
                     try {
                         const base64Str = await handleImageBase64(file);
-                        setNewMerchant({ ...newMerchant, FotoUrl: base64Str });
-                        showToast("📸 Foto de perfil cargada");
+                        setNewMerchant(prev => ({ ...prev, FotoUrl: base64Str }));
+                        showToast("📸 Foto de nuevo comercio cargada");
                     } catch (err) {
                         showToast("❌ Error al procesar imagen");
                     }
@@ -353,6 +392,8 @@
                     setLoggedUser({ email, role: 'merchant', merchantId: merchant.ID_Comercio });
                     setView('merchant');
                     setActiveMerchantTab('pedidos');
+                    const savedIdea = merchant.Idea_Publicidad || "";
+                    setPromoIdea(savedIdea);
                     showToast(`💼 Panel de Comercio: ${merchant.Nombre}`);
                     return;
                 }
@@ -370,20 +411,40 @@
                     ...newMerchant,
                     ID_Comercio: slug,
                     Estatus: "Al corriente",
-                    FotoUrl: newMerchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
+                    FotoUrl: newMerchant.FotoUrl || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80",
+                    Idea_Publicidad: newMerchant.Idea_Publicidad || ""
                 };
                 setMerchants([...merchants, formatted]);
                 setShowNewMerchantModal(false);
                 setNewMerchant({
                     Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
                     WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
-                    Usuario: '', Contrasena: '', FotoUrl: ''
+                    Usuario: '', Contrasena: '', FotoUrl: '', Idea_Publicidad: ''
                 });
 
                 const syncLog = { event: "merchant_created", ID_Comercio: slug, Nombre: formatted.Nombre, timestamp: new Date().toISOString() };
                 setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
                 triggerWebhook(syncLog);
                 showToast(`🚀 Comercio "${formatted.Nombre}" registrado`);
+            };
+
+            const handleMerchantCellEdit = (merchantId, field, value) => {
+                setMerchants(prev => prev.map(m => m.ID_Comercio === merchantId ? { ...m, [field]: value } : m));
+            };
+
+            const handleMerchantCellBlur = (merchantId, field, finalValue) => {
+                const updatedMerchant = merchants.find(m => m.ID_Comercio === merchantId);
+                const syncLog = {
+                    event: "merchant_updated",
+                    ID_Comercio: merchantId,
+                    field: field,
+                    value: finalValue,
+                    updated_merchant: updatedMerchant,
+                    timestamp: new Date().toISOString()
+                };
+                setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
+                triggerWebhook(syncLog);
+                showToast(`💾 Registro "${field}" actualizado en base de datos`);
             };
 
             const toggleMerchantStatus = (id, currentStatus) => {
@@ -405,6 +466,7 @@
                 });
             };
 
+            // --- STREAMING_CHUNK: Managing Product upload pipeline with Base64 converter... ---
             const handleProductPhotoChange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -574,7 +636,6 @@
                     title: '🤖 Campaña Transmitida',
                     message: `La propuesta para crear publicidad con imagen en ${selectedChs.join(", ")} fue despachada con éxito al webhook de Make para el procesamiento inteligente.`
                 });
-                setPromoIdea('');
             };
 
             const filteredOrders = orders.filter(o => {
@@ -587,8 +648,19 @@
             const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
             const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
 
+            // --- STREAMING_CHUNK: Dynamic Color tokens mapping for perfect dark/light mode visibility... ---
+            const sBgHeader = theme === 'dark' ? 'bg-slate-950/90 border-slate-800/80 text-white' : 'bg-white border-slate-200/80 text-slate-900 shadow-sm';
+            const sBgCard = theme === 'dark' ? 'bg-slate-900/90 border-slate-800/80 text-slate-100' : 'bg-white border-slate-200/90 shadow-md text-slate-800';
+            const sBgInput = theme === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900';
+            const sTextPri = theme === 'dark' ? 'text-slate-100' : 'text-slate-900';
+            const sTextSec = theme === 'dark' ? 'text-slate-400' : 'text-slate-600';
+            const sBorder = theme === 'dark' ? 'border-slate-800' : 'border-slate-200';
+            const sTableHead = theme === 'dark' ? 'bg-slate-950/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
+            const sTableContainer = theme === 'dark' ? 'bg-slate-900/50 text-slate-300' : 'bg-white text-slate-800 border border-slate-200';
+            const sOptionBg = theme === 'dark' ? 'bg-slate-950 text-slate-200' : 'bg-white text-slate-800';
+
             return (
-                <div className="flex flex-col min-h-screen justify-between relative">
+                <div className={`flex flex-col min-h-screen justify-between relative ${theme === 'light' ? 'text-slate-900' : 'text-slate-100'}`}>
                     {notificationToast && (
                         <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200">
                             <i className="fa-solid fa-bell"></i>
@@ -596,30 +668,40 @@
                         </div>
                     )}
 
-                    {/* Header */}
-                    <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                    {/* Master Header */}
+                    <header className={`${sBgHeader} backdrop-blur-md border-b sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4 transition-all duration-200`}>
                         <div className="flex items-center gap-3.5">
                             <button 
                                 onClick={() => { setView('login'); window.history.pushState({}, '', window.location.pathname); }} 
-                                className="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center w-11 h-11"
+                                className={`bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border ${sBorder} transition duration-150 flex items-center justify-center w-11 h-11`}
                                 title="Volver a la pantalla principal"
                             >
                                 <i className="fa-solid fa-house text-base"></i>
                             </button>
                             <BrandLogo className="w-11 h-11" />
                             <div>
-                                <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                                <h1 className={`text-lg font-extrabold tracking-tight flex items-center gap-2 ${sTextPri}`}>
                                     ZeloxCloud <span className="text-xs bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">Local Hub</span>
                                 </h1>
-                                <p className="text-xs text-slate-400">Automatización Comercial Inteligente por DFC</p>
+                                <p className={`text-xs ${sTextSec}`}>Automatización Comercial Inteligente por DFC</p>
                             </div>
                         </div>
 
-                        {/* Navigation Right */}
+                        {/* Navigation Right (Theme + Stores dropdown) */}
                         <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                            {loggedUser ? (
-                                <div className="flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                                    <span className="text-xs text-slate-300 flex items-center">
+                            
+                            {/* Theme Toggle Button */}
+                            <button 
+                                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                                className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-950 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
+                                title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
+                            >
+                                <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base`}></i>
+                            </button>
+
+                            {loggedUser && (
+                                <div className={`flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border ${sBorder}`}>
+                                    <span className={`text-xs flex items-center ${sTextPri}`}>
                                         <i className="fa-solid fa-circle-user text-amber-500 mr-2"></i>
                                         <span className="max-w-[150px] truncate">{loggedUser.email}</span>
                                     </span>
@@ -627,17 +709,11 @@
                                         <i className="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
-                            ) : (
-                                view !== 'login' && (
-                                    <button onClick={() => setView('login')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition h-9 flex items-center">
-                                        <i className="fa-solid fa-lock mr-1.5"></i> Panel Privado
-                                    </button>
-                                )
                             )}
 
                             {/* Dropdown Menu replacing horizontal list of shops */}
-                            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 text-xs">
-                                <span className="px-2 text-slate-400 font-bold"><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
+                            <div className={`flex items-center gap-1.5 p-1.5 rounded-xl border text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-900/90 border-slate-800 text-white'}`}>
+                                <span className={`px-2 font-bold ${sTextSec}`}><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
                                     value={view === 'shop' ? currentShopId : ''}
                                     onChange={(e) => {
@@ -651,11 +727,11 @@
                                             window.history.pushState({}, '', window.location.pathname);
                                         }
                                     }}
-                                    className="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-lg focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9"
+                                    className={`border rounded-lg py-1.5 px-3 focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
                                 >
-                                    <option value="">Seleccionar...</option>
+                                    <option value="" className={sOptionBg}>Seleccionar...</option>
                                     {merchants.map(m => (
-                                        <option key={m.ID_Comercio} value={m.ID_Comercio}>{m.Nombre}</option>
+                                        <option key={m.ID_Comercio} value={m.ID_Comercio} className={sOptionBg}>{m.Nombre}</option>
                                     ))}
                                 </select>
                             </div>
@@ -667,12 +743,12 @@
                         
                         {/* VIEW: LOGIN */}
                         {view === 'login' && (
-                            <div className="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
+                            <div className={`${sBgCard} max-w-md mx-auto my-12 p-8 rounded-2xl border gold-glow relative`}>
                                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
                                 <div className="text-center mb-8">
                                     <BrandLogo className="w-16 h-16 rounded-full mx-auto mb-4" />
-                                    <h2 className="text-2xl font-black text-white">Ingreso de Personal</h2>
-                                    <p className="text-xs text-slate-400 mt-1">Ecosistema contable y logístico ZeloxCloud SaaS</p>
+                                    <h2 className={`text-2xl font-black ${sTextPri}`}>Ingreso de Personal</h2>
+                                    <p className={`text-xs ${sTextSec} mt-1`}>Ecosistema contable y logístico ZeloxCloud SaaS</p>
                                 </div>
 
                                 {loginError && (
@@ -684,20 +760,20 @@
 
                                 <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
                                     <div>
-                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico</label>
+                                        <label className={`block text-xs font-semibold uppercase tracking-wider ${sTextSec} mb-2`}>Correo Electrónico</label>
                                         <input 
                                             type="email" placeholder="Ingresa tu correo" value={loginEmail}
                                             onChange={(e) => setLoginEmail(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            className={`w-full ${sBgInput} border rounded-xl px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-amber-500 text-sm`}
                                             autoComplete="new-password" required
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Contraseña</label>
+                                        <label className={`block text-xs font-semibold uppercase tracking-wider ${sTextSec} mb-2`}>Contraseña</label>
                                         <input 
                                             type="password" placeholder="Ingresa tu contraseña" value={loginPass}
                                             onChange={(e) => setLoginPass(e.target.value)}
-                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            className={`w-full ${sBgInput} border rounded-xl px-4 py-3 placeholder-slate-400 focus:outline-none focus:border-amber-500 text-sm`}
                                             autoComplete="new-password" required
                                         />
                                     </div>
@@ -710,19 +786,19 @@
 
                         {/* VIEW: SUSPENDED SCREEN */}
                         {showBlockedScreen && (
-                            <div className="max-w-lg mx-auto my-12 bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative">
+                            <div className={`${sBgCard} max-w-lg mx-auto my-12 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative`}>
                                 <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
                                     <i className="fa-solid fa-ban"></i>
                                 </div>
                                 <h2 className="text-2xl font-black text-red-400">SERVICIO SUSPENDIDO</h2>
-                                <h3 className="text-lg font-bold text-white mt-2">{blockedMerchantName}</h3>
-                                <p className="text-slate-400 mt-4 text-sm leading-relaxed">
+                                <h3 className={`text-lg font-bold ${sTextPri} mt-2`}>{blockedMerchantName}</h3>
+                                <p className={`${sTextSec} mt-4 text-sm leading-relaxed`}>
                                     El acceso al panel y el menú digital para este comercio han sido desactivados debido a la falta de pago de la membresía.
                                 </p>
-                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 my-6 text-left space-y-2 text-xs">
-                                    <p className="text-slate-400 font-bold uppercase tracking-wider">Contacto de Reactivación DFC:</p>
-                                    <p className="text-slate-200"><i className="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
-                                    <p className="text-slate-200"><i className="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
+                                <div className={`p-4 rounded-xl border my-6 text-left space-y-2 text-xs ${theme === 'light' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}>
+                                    <p className={`font-bold uppercase tracking-wider ${sTextSec}`}>Contacto de Reactivación DFC:</p>
+                                    <p><i className="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
+                                    <p><i className="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
                                 </div>
                                 <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold">
                                     Cerrar Ventana
@@ -737,16 +813,16 @@
                                     <div>
                                         <div className="flex items-center gap-3">
                                             <span className="text-xs bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider">SUPER-ADMIN</span>
-                                            <h2 className="text-3xl font-black text-white">Consola de Control Juan Guerrero</h2>
+                                            <h2 className={`text-3xl font-black ${sTextPri}`}>Consola de Control Juan Guerrero</h2>
                                         </div>
-                                        <p className="text-sm text-slate-400 mt-1">Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
+                                        <p className={`text-sm ${sTextSec} mt-1`}>Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
                                     </div>
                                     <button onClick={() => setShowNewMerchantModal(true)} className="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
                                         <i className="fa-solid fa-plus-circle text-lg"></i> Registrar Comercio
                                     </button>
                                 </div>
 
-                                <div className="flex flex-wrap gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                <div className={`flex flex-wrap gap-2 border-b ${sBorder} mb-6 font-bold text-sm`}>
                                     <button onClick={() => setActiveAdminTab('comercios')} className={`pb-3 px-4 transition ${activeAdminTab === 'comercios' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
                                         <i className="fa-solid fa-store mr-2"></i> Directorio de Clientes ({merchants.length})
                                     </button>
@@ -760,14 +836,14 @@
 
                                 {/* ADMIN TAB: MERCHANTS DIRECTORY */}
                                 {activeAdminTab === 'comercios' && (
-                                    <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                                        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                                            <h3 className="font-bold text-lg text-white">Comercios Afiliados</h3>
+                                    <div className={`${sBgCard} rounded-2xl border overflow-hidden shadow-xl`}>
+                                        <div className={`p-6 border-b ${sBorder} flex justify-between items-center bg-slate-900/10`}>
+                                            <h3 className={`font-bold text-lg ${sTextPri}`}>Comercios Afiliados</h3>
                                         </div>
                                         <div className="overflow-x-auto">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-bold bg-slate-950/40">
+                                                    <tr className={`border-b ${sBorder} ${sTextSec} text-xs uppercase tracking-wider font-bold bg-slate-900/10`}>
                                                         <th className="p-4">Foto / Comercio</th>
                                                         <th className="p-4">Credenciales</th>
                                                         <th className="p-4">Estatus del SaaS</th>
@@ -775,11 +851,10 @@
                                                         <th className="p-4 text-center">Controles</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="divide-y divide-slate-800">
+                                                <tbody className={`divide-y ${sBorder}`}>
                                                     {merchants.map((m) => (
-                                                        <tr key={m.ID_Comercio} className="hover:bg-slate-800/40 transition">
+                                                        <tr key={m.ID_Comercio} className="hover:bg-amber-500/5 transition">
                                                             <td className="p-4 flex items-center gap-3">
-                                                                {/* Clickable store logo that opens profile picture selector -- WhatsApp style! */}
                                                                 <div className="relative group w-12 h-12 rounded-lg overflow-hidden border border-slate-700 cursor-pointer">
                                                                     <img 
                                                                         src={transformDriveUrl(m.FotoUrl)} 
@@ -798,14 +873,14 @@
                                                                     </label>
                                                                 </div>
                                                                 <div>
-                                                                    <div className="font-bold text-white text-base">{m.Nombre}</div>
+                                                                    <div className={`font-bold ${sTextPri} text-base`}>{m.Nombre}</div>
                                                                     <div className="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
-                                                                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {m.ID_Comercio}</div>
+                                                                    <div className={`text-[10px] ${sTextSec} font-mono mt-0.5`}>ID: {m.ID_Comercio}</div>
                                                                 </div>
                                                             </td>
                                                             <td className="p-4">
-                                                                <div className="text-xs font-mono text-slate-300">{m.Usuario}</div>
-                                                                <div className="text-xs text-slate-500 mt-1 font-mono">Clave: {m.Contrasena}</div>
+                                                                <div className={`text-xs font-mono ${sTextPri}`}>{m.Usuario}</div>
+                                                                <div className={`text-xs ${sTextSec} mt-1 font-mono`}>Clave: {m.Contrasena}</div>
                                                             </td>
                                                             <td className="p-4">
                                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 border ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
@@ -813,7 +888,7 @@
                                                                     {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Al corriente" : "Suspendido"}
                                                                 </span>
                                                             </td>
-                                                            <td className="p-4 text-xs font-mono text-slate-300">
+                                                            <td className={`p-4 text-xs font-mono ${sTextPri}`}>
                                                                 {m.WhatsApp_Group_ID || 'N/A'}
                                                             </td>
                                                             <td className="p-4">
@@ -821,7 +896,7 @@
                                                                     <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
                                                                         {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Suspender" : "Activar"}
                                                                     </button>
-                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border border-slate-700">
+                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className={`bg-slate-800/80 hover:bg-slate-750 text-slate-300 p-2 rounded-lg text-xs border ${sBorder}`}>
                                                                         <i className="fa-solid fa-trash"></i>
                                                                     </button>
                                                                 </div>
@@ -838,45 +913,53 @@
                                 {activeAdminTab === 'ordenes_globales' && (
                                     <div className="space-y-6">
                                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ventas Brutas Totales</p>
+                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Ventas Brutas Totales</p>
                                                 <h4 className="text-2xl font-black text-amber-500">${totalRevenue.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ticket Promedio</p>
+                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Ticket Promedio</p>
                                                 <h4 className="text-2xl font-black text-emerald-400">${avgTicket.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Comisión DFC</p>
+                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Comisión DFC</p>
                                                 <h4 className="text-2xl font-black text-blue-400">${totalDelivery.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total de Pedidos</p>
+                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Total de Pedidos</p>
                                                 <h4 className="text-2xl font-black text-purple-400">{filteredOrders.length} Órdenes</h4>
                                             </div>
                                         </div>
 
                                         {/* Sorting and filtering of global logs */}
-                                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                                            <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
-                                                <h3 className="font-bold text-lg text-white">Historial Global de Transacciones</h3>
-                                                <div className="flex flex-wrap gap-2 text-slate-200">
-                                                    <select value={filterMerchant} onChange={(e) => setFilterMerchant(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
-                                                        <option value="todos">Todos los comercios</option>
-                                                        {merchants.map(m => <option key={m.ID_Comercio} value={m.ID_Comercio}>{m.Nombre}</option>)}
+                                        <div className={`${sBgCard} rounded-2xl border overflow-hidden shadow-xl`}>
+                                            <div className={`p-6 border-b ${sBorder} bg-slate-900/10 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold`}>
+                                                <h3 className={`font-bold text-lg ${sTextPri}`}>Historial Global de Transacciones</h3>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <select 
+                                                        value={filterMerchant} 
+                                                        onChange={(e) => setFilterMerchant(e.target.value)} 
+                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}
+                                                    >
+                                                        <option value="todos" className={sOptionBg}>Todos los comercios</option>
+                                                        {merchants.map(m => <option key={m.ID_Comercio} value={m.ID_Comercio} className={sOptionBg}>{m.Nombre}</option>)}
                                                     </select>
-                                                    <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
-                                                        <option value="todos">Todos los métodos de pago</option>
-                                                        <option value="Efectivo">Efectivo</option>
-                                                        <option value="Tarjeta de Débito/Crédito">Tarjeta</option>
-                                                        <option value="Transferencia SPEI">Transferencia</option>
+                                                    <select 
+                                                        value={filterPayment} 
+                                                        onChange={(e) => setFilterPayment(e.target.value)} 
+                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}
+                                                    >
+                                                        <option value="todos" className={sOptionBg}>Todos los métodos de pago</option>
+                                                        <option value="Efectivo" className={sOptionBg}>Efectivo</option>
+                                                        <option value="Tarjeta de Débito/Crédito" className={sOptionBg}>Tarjeta</option>
+                                                        <option value="Transferencia SPEI" className={sOptionBg}>Transferencia</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div className="overflow-x-auto">
                                                 <table className="w-full text-left border-collapse">
                                                     <thead>
-                                                        <tr className="bg-slate-950/40 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-800">
+                                                        <tr className={`bg-slate-900/10 ${sTextSec} text-xs uppercase tracking-wider font-bold border-b ${sBorder}`}>
                                                             <th className="p-4">ID / Comercio</th>
                                                             <th className="p-4">Cliente / Dirección</th>
                                                             <th className="p-4">Detalle de Compra</th>
@@ -884,19 +967,19 @@
                                                             <th className="p-4 text-right">Total</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-slate-800 text-sm">
+                                                    <tbody className={`divide-y ${sBorder} text-sm`}>
                                                         {filteredOrders.length === 0 ? (
                                                             <tr><td colSpan="5" className="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
                                                         ) : (
                                                             filteredOrders.map(o => {
                                                                 const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
                                                                 return (
-                                                                    <tr key={o.ID_Orden} className="hover:bg-slate-800/20 transition">
-                                                                        <td className="p-4 font-mono"><span className="text-amber-500 font-bold block">{o.ID_Orden}</span><span className="text-[10px] text-slate-500 uppercase">{name}</span></td>
-                                                                        <td className="p-4"><div className="font-bold text-slate-200">{o.Cliente}</div><div className="text-xs text-slate-400">{o.Direccion}</div></td>
-                                                                        <td className="p-4 text-slate-300 font-mono text-xs max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                    <tr key={o.ID_Orden} className="hover:bg-amber-500/5 transition">
+                                                                        <td className="p-4 font-mono"><span className="text-amber-500 font-bold block">{o.ID_Orden}</span><span className={`text-[10px] ${sTextSec} uppercase`}>{name}</span></td>
+                                                                        <td className="p-4"><div className={`font-bold ${sTextPri}`}>{o.Cliente}</div><div className={`text-xs ${sTextSec}`}>{o.Direccion}</div></td>
+                                                                        <td className={`p-4 ${sTextPri} font-mono text-xs max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                         <td className="p-4"><div className="text-xs font-semibold">{o.Metodo_Pago}</div></td>
-                                                                        <td className="p-4 text-right font-black text-white text-base">${o.Total} MXN</td>
+                                                                        <td className="p-4 text-right font-black text-amber-500 text-base">${o.Total} MXN</td>
                                                                     </tr>
                                                                 );
                                                             })
@@ -908,20 +991,20 @@
                                     </div>
                                 )}
 
-                                {/* ADMIN TAB: AUDIT AND INTEGRATION LINKS */}
+                                {/* --- STREAMING_CHUNK: Displaying Database Audit and Configuration tab... --- */}
                                 {activeAdminTab === 'db' && (
                                     <div className="space-y-6">
-                                        <div className="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800 space-y-4">
-                                            <h3 className="font-bold text-lg text-white"><i className="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
+                                        <div className={`${sBgCard} p-6 rounded-2xl border space-y-4`}>
+                                            <h3 className={`font-bold text-lg ${sTextPri} flex items-center gap-2`}><i className="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
                                             <div className="max-w-xl">
-                                                <label className="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">URL de Webhook Maestro (Make.com)</label>
+                                                <label className={`block text-xs ${sTextSec} font-bold uppercase tracking-wider mb-2`}>URL de Webhook Maestro (Make.com)</label>
                                                 <div className="flex gap-2">
                                                     <input 
                                                         type="text" 
                                                         placeholder="https://hook.us2.make.com/..." 
                                                         value={webhookUrl} 
                                                         onChange={(e) => setWebhookUrl(e.target.value)} 
-                                                        className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500"
+                                                        className={`${sBgInput} border rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500`}
                                                     />
                                                     <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition">
                                                         Guardar
@@ -931,34 +1014,103 @@
                                             </div>
                                         </div>
 
-                                        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                                            <div className="bg-emerald-950/30 p-4 border-b border-slate-800 flex justify-between items-center text-xs font-mono">
-                                                <span className="font-bold text-emerald-400">Tabla: Configuracion_Comercios</span>
-                                                <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
+                                        <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
+                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-150 border-slate-200 text-slate-850' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
+                                                <span className="font-bold">Tabla: Configuracion_Comercios (Doble clic / Edición Libre en Vivo)</span>
+                                                <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
                                             </div>
-                                            <div className="overflow-x-auto text-[11px] font-mono p-2">
-                                                <table className="w-full text-left bg-slate-950 rounded-lg">
+                                            <div className={`overflow-x-auto text-[11px] font-mono p-2 ${sTableContainer}`}>
+                                                <table className="w-full text-left rounded-lg border-collapse">
                                                     <thead>
-                                                        <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
-                                                            <th className="p-2 border-r border-slate-800">ID_Comercio</th>
-                                                            <th className="p-2 border-r border-slate-800">Nombre</th>
-                                                            <th className="p-2 border-r border-slate-800">Usuario</th>
-                                                            <th className="p-2 border-r border-slate-800">Contrasena</th>
-                                                            <th className="p-2 border-r border-slate-800">Estatus</th>
-                                                            <th className="p-2 border-r border-slate-800">Categoria</th>
-                                                            <th className="p-2">Contacto</th>
+                                                        <tr className={`border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-700' : 'bg-slate-900 text-slate-400'}`}>
+                                                            <th className={`p-3 border-r ${sBorder}`}>ID_Comercio</th>
+                                                            <th className={`p-3 border-r ${sBorder}`}>Nombre</th>
+                                                            <th className={`p-3 border-r ${sBorder}`}>Usuario</th>
+                                                            <th className={`p-3 border-r ${sBorder}`}>Contrasena</th>
+                                                            <th className={`p-3 border-r ${sBorder} text-center`}>Estatus</th>
+                                                            <th className={`p-3 border-r ${sBorder} text-center`}>Categoria</th>
+                                                            <th className={`p-3 border-r ${sBorder}`}>Contacto</th>
+                                                            <th className="p-3">Idea Publicidad</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody className="divide-y divide-slate-800 text-slate-300">
+                                                    <tbody className={`divide-y ${sBorder}`}>
                                                         {merchants.map(m => (
-                                                            <tr key={m.ID_Comercio}>
-                                                                <td className="p-2 border-r border-slate-800">{m.ID_Comercio}</td>
-                                                                <td className="p-2 border-r border-slate-800">{m.Nombre}</td>
-                                                                <td className="p-2 border-r border-slate-800">{m.Usuario}</td>
-                                                                <td className="p-2 border-r border-slate-800">{m.Contrasena}</td>
-                                                                <td className="p-2 border-r border-slate-800">{m.Estatus}</td>
-                                                                <td className="p-2 border-r border-slate-800">{m.Categoria}</td>
-                                                                <td className="p-2">{m.Contacto}</td>
+                                                            <tr key={m.ID_Comercio} className="hover:bg-amber-500/5">
+                                                                <td className={`p-2 border-r text-amber-500 font-bold ${sBorder}`}>{m.ID_Comercio}</td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Nombre} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Nombre', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Nombre', e.target.value)}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs font-bold ${sTextPri}`}
+                                                                    />
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Usuario} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Usuario', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Usuario', e.target.value)}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs ${sTextPri}`}
+                                                                    />
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Contrasena} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Contrasena', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Contrasena', e.target.value)}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs ${sTextPri}`}
+                                                                    />
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder} text-center`}>
+                                                                    <select 
+                                                                        value={m.Estatus} 
+                                                                        onChange={(e) => {
+                                                                            handleMerchantCellEdit(m.ID_Comercio, 'Estatus', e.target.value);
+                                                                            handleMerchantCellBlur(m.ID_Comercio, 'Estatus', e.target.value);
+                                                                        }}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                    >
+                                                                        <option value="Al corriente" className={sOptionBg}>Al corriente</option>
+                                                                        <option value="Suspendido" className={sOptionBg}>Suspendido</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <select 
+                                                                        value={m.Categoria} 
+                                                                        onChange={(e) => {
+                                                                            handleMerchantCellEdit(m.ID_Comercio, 'Categoria', e.target.value);
+                                                                            handleMerchantCellBlur(m.ID_Comercio, 'Categoria', e.target.value);
+                                                                        }}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans w-full ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                    >
+                                                                        <option value="Servicios" className={sOptionBg}>Servicios</option>
+                                                                        <option value="Restaurante" className={sOptionBg}>Restaurante</option>
+                                                                        <option value="Tecnología" className={sOptionBg}>Tecnología</option>
+                                                                        <option value="Tienda local" className={sOptionBg}>Tienda local</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Contacto} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Contacto', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Contacto', e.target.value)}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs ${sTextPri}`}
+                                                                    />
+                                                                </td>
+                                                                <td className="p-2">
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Idea_Publicidad || ""} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Idea_Publicidad', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Idea_Publicidad', e.target.value)}
+                                                                        placeholder="Idea promocional generada..."
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs italic ${theme === 'light' ? 'text-slate-800' : 'text-slate-300'}`}
+                                                                    />
+                                                                </td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -966,9 +1118,9 @@
                                             </div>
                                         </div>
 
-                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h4 className="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Historial de Salida JSON (Webhook live-stream)</h4>
-                                            <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800">
+                                        <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                            <h4 className={`font-bold text-sm ${sTextPri} mb-3 flex items-center gap-2`}>Historial de Salida JSON (Webhook live-stream)</h4>
+                                            <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800 text-emerald-400">
                                                 {webhookLog.length === 0 ? (
                                                     <span className="text-slate-600 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
                                                 ) : (
@@ -998,10 +1150,10 @@
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
                                                 <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
-                                                    <option value="Servicios">Servicios</option>
-                                                    <option value="Restaurante">Restaurante</option>
-                                                    <option value="Tecnología">Tecnología</option>
-                                                    <option value="Tienda local">Tienda local</option>
+                                                    <option value="Servicios" className={sOptionBg}>Servicios</option>
+                                                    <option value="Restaurante" className={sOptionBg}>Restaurante</option>
+                                                    <option value="Tecnología" className={sOptionBg}>Tecnología</option>
+                                                    <option value="Tienda local" className={sOptionBg}>Tienda local</option>
                                                 </select>
                                             </div>
                                         </div>
@@ -1054,7 +1206,7 @@
                             </div>
                         )}
 
-                        {/* VIEW: CLIENT MERCHANT WORKSPACE */}
+                        {/* --- STREAMING_CHUNK: Displaying Client Merchant Workspace... --- */}
                         {view === 'merchant' && (
                             <div>
                                 {(() => {
@@ -1087,18 +1239,18 @@
                                                     <div>
                                                         <div className="flex items-center gap-2.5">
                                                             <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
-                                                            <h2 className="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                            <h2 className={`text-3xl font-black ${sTextPri}`}>{merchant.Nombre}</h2>
                                                         </div>
-                                                        <p className="text-sm text-slate-400 mt-1">SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
+                                                        <p className={`text-sm ${sTextSec} mt-1`}>SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
                                                     </div>
                                                 </div>
-                                                <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-1 text-slate-400">
+                                                <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
                                                     <div>Estatus: <span className="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
                                                     <div>WhatsApp ID: <span className="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
                                                 </div>
                                             </div>
 
-                                            <div className="flex gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                            <div className={`flex gap-2 border-b ${sBorder} mb-6 font-bold text-sm`}>
                                                 <button onClick={() => setActiveMerchantTab('pedidos')} className={`pb-3 px-4 transition ${activeMerchantTab === 'pedidos' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
                                                     <i className="fa-solid fa-bell-concierge mr-2"></i> Pedidos en Vivo
                                                     <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{orders.filter(o => o.ID_Comercio === merchant.ID_Comercio && o.Estado !== "Entregado").length}</span>
@@ -1114,11 +1266,11 @@
                                             {/* LIVE ORDERS SECTION */}
                                             {activeMerchantTab === 'pedidos' && (
                                                 <div className="space-y-4">
-                                                    <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                                    <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
                                                         <div className="overflow-x-auto">
                                                             <table className="w-full text-left border-collapse">
                                                                 <thead>
-                                                                    <tr className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-850">
+                                                                    <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-600' : 'bg-slate-950 text-slate-400'}`}>
                                                                         <th className="p-4">ID de Pedido</th>
                                                                         <th className="p-4">Cliente / Dirección</th>
                                                                         <th className="p-4">Productos</th>
@@ -1135,15 +1287,15 @@
                                                                             <tr key={o.ID_Orden} className={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
                                                                                 <td className="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
                                                                                 <td className="p-4">
-                                                                                    <div className="font-bold text-white">{o.Cliente}</div>
-                                                                                    <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-1"><i className="fa-solid fa-location-dot text-slate-500"></i>{o.Direccion}</div>
+                                                                                    <div className={`font-bold ${sTextPri}`}>{o.Cliente}</div>
+                                                                                    <div className={`text-xs ${sTextSec} flex items-center gap-1.5 mt-1`}><i className="fa-solid fa-location-dot"></i>{o.Direccion}</div>
                                                                                 </td>
-                                                                                <td className="p-4 text-slate-300 font-medium max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                                <td className={`p-4 ${sTextPri} font-medium max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                                 <td className="p-4 text-xs font-semibold">
-                                                                                    <span className="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-300">{o.Metodo_Pago}</span>
+                                                                                    <span className={`px-2 py-1 rounded border ${theme === 'light' ? 'bg-slate-50 border-slate-250 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>{o.Metodo_Pago}</span>
                                                                                     {o.Cambio > 0 && <p className="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
                                                                                 </td>
-                                                                                <td className="p-4 font-black text-white text-base">${o.Total} MXN</td>
+                                                                                <td className="p-4 font-black text-amber-500 text-base">${o.Total} MXN</td>
                                                                                 <td className="p-4 text-center">
                                                                                     {o.Estado === "Entregado" ? (
                                                                                         <span className="bg-emerald-500/10 text-emerald-400 font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center justify-center gap-1.5 w-max mx-auto">
@@ -1168,39 +1320,39 @@
                                             {/* MY CATALOGUE SECTION */}
                                             {activeMerchantTab === 'catalogo' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
-                                                        <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3"><i className="fa-solid fa-circle-plus text-amber-500 mr-2"></i>Nuevo Producto</h3>
+                                                    <div className={`${sBgCard} p-6 rounded-2xl border h-max space-y-4`}>
+                                                        <h3 className={`font-bold text-lg ${sTextPri} border-b ${sBorder} pb-3`}><i className="fa-solid fa-circle-plus text-amber-500 mr-2"></i>Nuevo Producto</h3>
                                                         <form onSubmit={handleAddProduct} className="space-y-4 text-sm">
                                                             <div>
-                                                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nombre del Producto *</label>
-                                                                <input type="text" placeholder="ej. Asesoría Contable" value={newProduct.Nombre_Producto} onChange={(e) => setNewProduct({...newProduct, Nombre_Producto: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                                <label className={`block text-xs font-semibold ${sTextSec} uppercase tracking-wider mb-1.5`}>Nombre del Producto *</label>
+                                                                <input type="text" placeholder="ej. Asesoría Contable" value={newProduct.Nombre_Producto} onChange={(e) => setNewProduct({...newProduct, Nombre_Producto: e.target.value})} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500`} required />
                                                             </div>
                                                             <div className="grid grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Precio (MXN) *</label>
-                                                                    <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                                    <label className={`block text-xs font-semibold ${sTextSec} uppercase tracking-wider mb-1.5`}>Precio (MXN) *</label>
+                                                                    <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500`} required />
                                                                 </div>
                                                                 <div>
-                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Categoría</label>
-                                                                    <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
-                                                                        <option value="💼">💼 Servicios</option>
-                                                                        <option value="🚀">🚀 SaaS</option>
-                                                                        <option value="🌶️">🌶️ Salsa</option>
-                                                                        <option value="🌮">🌮 Taco</option>
-                                                                        <option value="🍔">🍔 Hamburguesa</option>
-                                                                        <option value="🍕">🍕 Pizza</option>
-                                                                        <option value="🥤">🥤 Bebidas</option>
-                                                                        <option value="🍰">🍰 Postres</option>
-                                                                        <option value="🥚">🥚 Desayuno</option>
-                                                                        <option value="🍎">🍎 Frutas/Verduras</option>
-                                                                        <option value="🥛">🥛 Lácteos</option>
-                                                                        <option value="📦">📦 Abarrotes</option>
-                                                                        <option value="🧼">🧼 Limpieza</option>
-                                                                        <option value="💊">💊 Salud</option>
-                                                                        <option value="🛠️">🛠️ Ferretería</option>
-                                                                        <option value="💻">💻 Electrónica</option>
-                                                                        <option value="👔">👔 Ropa/Accesorios</option>
-                                                                        <option value="📚">📚 Papelería</option>
+                                                                    <label className={`block text-xs font-semibold ${sTextSec} uppercase tracking-wider mb-1.5`}>Icono / Categoría</label>
+                                                                    <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500`}>
+                                                                        <option value="💼" className={sOptionBg}>💼 Servicios</option>
+                                                                        <option value="🚀" className={sOptionBg}>🚀 SaaS</option>
+                                                                        <option value="🌶️" className={sOptionBg}>🌶️ Salsa</option>
+                                                                        <option value="🌮" className={sOptionBg}>🌮 Taco</option>
+                                                                        <option value="🍔" className={sOptionBg}>🍔 Hamburguesa</option>
+                                                                        <option value="🍕" className={sOptionBg}>🍕 Pizza</option>
+                                                                        <option value="🥤" className={sOptionBg}>🥤 Bebidas</option>
+                                                                        <option value="🍰" className={sOptionBg}>🍰 Postres</option>
+                                                                        <option value="🥚" className={sOptionBg}>🥚 Desayuno</option>
+                                                                        <option value="🍎" className={sOptionBg}>🍎 Frutas/Verduras</option>
+                                                                        <option value="🥛" className={sOptionBg}>🥛 Lácteos</option>
+                                                                        <option value="📦" className={sOptionBg}>📦 Abarrotes</option>
+                                                                        <option value="🧼" className={sOptionBg}>🧼 Limpieza</option>
+                                                                        <option value="💊" className={sOptionBg}>💊 Salud</option>
+                                                                        <option value="🛠️" className={sOptionBg}>🛠️ Ferretería</option>
+                                                                        <option value="💻" className={sOptionBg}>💻 Electrónica</option>
+                                                                        <option value="👔" className={sOptionBg}>👔 Ropa/Accesorios</option>
+                                                                        <option value="📚" className={sOptionBg}>📚 Papelería</option>
                                                                     </select>
                                                                 </div>
                                                             </div>
@@ -1230,8 +1382,8 @@
                                                             </div>
 
                                                             <div>
-                                                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
-                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                                                                <label className={`block text-xs font-semibold ${sTextSec} uppercase tracking-wider mb-1.5`}>Descripción</label>
+                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 resize-none`}></textarea>
                                                             </div>
                                                             <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar en Catálogo</button>
                                                         </form>
@@ -1239,25 +1391,25 @@
 
                                                     {/* Product Catalog view */}
                                                     <div className="lg:col-span-2 space-y-4">
-                                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                                            <h3 className="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
+                                                        <div className={`${sBgCard} p-6 rounded-2xl border`}>
+                                                            <h3 className={`font-bold text-lg ${sTextPri} mb-4`}>Productos en Menú / Catálogo Activo</h3>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                 {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                                    <p className="text-slate-500 italic col-span-2 text-center py-6">Catálogo vacío.</p>
+                                                                    <p className="text-slate-550 italic col-span-2 text-center py-6">Catálogo vacío.</p>
                                                                 ) : (
                                                                     products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
-                                                                        <div key={p.ID_Producto} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
+                                                                        <div key={p.ID_Producto} className={`${theme === 'light' ? 'bg-slate-50' : 'bg-slate-955'} p-4 rounded-xl border ${sBorder} flex justify-between items-start`}>
                                                                             <div className="flex gap-3">
-                                                                                <span className="text-3xl p-2 bg-slate-900 rounded-lg flex items-center justify-center w-14 h-14 overflow-hidden border border-slate-800">
+                                                                                <span className={`text-3xl p-2 ${theme === 'light' ? 'bg-white' : 'bg-slate-900'} rounded-lg flex items-center justify-center w-14 h-14 overflow-hidden border ${sBorder}`}>
                                                                                     {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
                                                                                 </span>
                                                                                 <div>
-                                                                                    <h4 className="font-bold text-white text-sm">{p.Nombre_Producto}</h4>
-                                                                                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">{p.Descripcion}</p>
+                                                                                    <h4 className={`font-bold ${sTextPri} text-sm`}>{p.Nombre_Producto}</h4>
+                                                                                    <p className={`text-xs ${sTextSec} mt-1 line-clamp-2`}>{p.Descripcion}</p>
                                                                                     <span className="text-xs text-amber-500 font-extrabold block mt-2">${p.Precio} MXN</span>
                                                                                 </div>
                                                                             </div>
-                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} className="text-slate-650 hover:text-red-400 p-1"><i className="fa-solid fa-trash-can"></i></button>
+                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} className="text-slate-400 hover:text-red-400 p-1"><i className="fa-solid fa-trash-can"></i></button>
                                                                         </div>
                                                                     ))
                                                                 )}
@@ -1270,15 +1422,21 @@
                                             {/* CONFIGURATION AND MARKETING AI */}
                                             {activeMerchantTab === 'config' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
+                                                    <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 h-max`}>
                                                         <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i className="fa-solid fa-robot"></i></div>
-                                                        <h3 className="font-bold text-lg text-white">Marketing Inteligente IA</h3>
-                                                        <p className="text-xs text-slate-400 mt-1">Escribe tu idea comercial y selecciona a qué redes deseas enviarla para que ChatGPT genere tu posteo con fotografía publicitaria.</p>
+                                                        <h3 className={`font-bold text-lg ${sTextPri}`}>Marketing Inteligente IA</h3>
+                                                        <p className={`text-xs ${sTextSec} mt-1`}>Escribe tu idea comercial y selecciona a qué redes deseas enviarla para que ChatGPT genere tu posteo con fotografía publicitaria.</p>
                                                         
-                                                        <textarea placeholder="Ej: Hoy 10% de descuento en auditorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
+                                                        <textarea 
+                                                            placeholder="Ej: Hoy 10% de descuento en auditorías contables..." 
+                                                            value={promoIdea} 
+                                                            onChange={(e) => handlePromoIdeaChange(e.target.value, merchant.ID_Comercio)} 
+                                                            className={`w-full ${sBgInput} border rounded-xl px-3 py-2 text-xs focus:outline-none resize-none`} 
+                                                            rows="3"
+                                                        ></textarea>
                                                         
-                                                        <div className="space-y-2 text-xs text-slate-300">
-                                                            <p className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Redes de Destino:</p>
+                                                        <div className={`space-y-2 text-xs ${sTextPri}`}>
+                                                            <p className={`font-bold uppercase tracking-wider text-[10px] ${sTextSec}`}>Redes de Destino:</p>
                                                             <div className="flex flex-wrap gap-3">
                                                                 <label className="flex items-center gap-1.5 cursor-pointer">
                                                                     <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
@@ -1299,17 +1457,17 @@
                                                     </div>
 
                                                     <div className="lg:col-span-2 space-y-6">
-                                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6">
-                                                            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Código QR & Enlace de Autogestión</h3>
+                                                        <div className={`${sBgCard} p-6 rounded-2xl border space-y-6`}>
+                                                            <h3 className={`font-bold text-lg ${sTextPri} border-b ${sBorder} pb-3`}>Código QR & Enlace de Autogestión</h3>
                                                             <div className="flex flex-col md:flex-row gap-6 items-center">
                                                                 <div className="bg-white p-4 rounded-2xl w-44 h-44 flex items-center justify-center shadow-xl">
                                                                     <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getDynamicStoreLink(merchant.ID_Comercio))}`} alt="QR" className="w-36 h-36" />
                                                                 </div>
-                                                                <div className="space-y-4 flex-grow">
-                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Enlace del Menú Digital Público</span>
+                                                                <div className="space-y-4 flex-grow w-full">
+                                                                    <span className={`text-[10px] uppercase font-bold tracking-wider block mb-1 ${sTextSec}`}>Enlace del Menú Digital Público</span>
                                                                     <div className="flex gap-2">
-                                                                        <input type="text" value={getDynamicStoreLink(merchant.ID_Comercio)} readOnly className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none" />
-                                                                        <button onClick={() => { navigator.clipboard.writeText(getDynamicStoreLink(merchant.ID_Comercio)); showToast("📋 Enlace copiado"); }} className="bg-slate-850 hover:bg-slate-800 text-slate-300 px-3 rounded-xl border border-slate-805"><i className="fa-solid fa-copy"></i></button>
+                                                                        <input type="text" value={getDynamicStoreLink(merchant.ID_Comercio)} readOnly className={`${sBgInput} border rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none`} />
+                                                                        <button onClick={() => { navigator.clipboard.writeText(getDynamicStoreLink(merchant.ID_Comercio)); showToast("📋 Enlace copiado"); }} className={`bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 rounded-xl border ${sBorder}`}><i className="fa-solid fa-copy"></i></button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1323,12 +1481,12 @@
                             </div>
                         )}
 
-                        {/* VIEW: SHOP */}
+                        {/* --- STREAMING_CHUNK: Displaying public storefront shop view... --- */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
                                     const merchant = merchants.find(m => m.ID_Comercio === currentShopId);
-                                    if (!merchant) return <p className="text-center text-slate-500">Comercio deshabilitado.</p>;
+                                    if (!merchant) return <p className="text-center text-slate-550">Comercio deshabilitado.</p>;
                                     return (
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                             <div className="lg:col-span-2 space-y-6">
@@ -1344,21 +1502,21 @@
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                        <p className="text-slate-500 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
+                                                        <p className="text-slate-550 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
                                                     ) : (
                                                         products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
-                                                            <div key={p.ID_Producto} className="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
+                                                            <div key={p.ID_Producto} className={`${sBgCard} border p-5 rounded-2xl transition flex flex-col justify-between`}>
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-start">
-                                                                        <span className="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800 flex items-center justify-center w-14 h-14 overflow-hidden">
+                                                                        <span className={`text-3xl p-2 rounded-xl border flex items-center justify-center w-14 h-14 overflow-hidden ${theme === 'light' ? 'bg-slate-100 border-slate-200' : 'bg-slate-950 border-slate-800'}`}>
                                                                             {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
                                                                         </span>
                                                                         <span className="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
                                                                     </div>
-                                                                    <h3 className="font-bold text-white text-base pt-2">{p.Nombre_Producto}</h3>
-                                                                    <p className="text-xs text-slate-400 line-clamp-3">{p.Descripcion}</p>
+                                                                    <h3 className={`font-bold text-base pt-2 ${sTextPri}`}>{p.Nombre_Producto}</h3>
+                                                                    <p className={`text-xs ${sTextSec} line-clamp-3`}>{p.Descripcion}</p>
                                                                 </div>
-                                                                <button onClick={() => addToCart(p)} className="w-full mt-4 bg-slate-950 text-slate-300 hover:bg-amber-500 hover:text-slate-950 py-2 rounded-xl text-xs font-bold border border-slate-800 transition">Agregar al Pedido</button>
+                                                                <button onClick={() => addToCart(p)} className={`w-full mt-4 py-2 rounded-xl text-xs font-bold border transition ${theme === 'light' ? 'bg-slate-100 hover:bg-amber-500 hover:text-slate-950 border-slate-200' : 'bg-slate-950 hover:bg-amber-500 hover:text-slate-950 border-slate-800'}`}>Agregar al Pedido</button>
                                                             </div>
                                                         ))
                                                     )}
@@ -1367,26 +1525,26 @@
 
                                             {/* Shopping Cart checkout page */}
                                             <div className="space-y-6">
-                                                <div className="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
-                                                    <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
+                                                <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 sticky top-24 shadow-2xl`}>
+                                                    <h3 className={`font-bold text-lg ${sTextPri} border-b ${sBorder} pb-3 flex justify-between items-center`}>
                                                         <span>Resumen de Compra</span>
-                                                        <span className="text-xs text-slate-400">({Object.values(cart).reduce((sum, i) => sum + i.qty, 0)} items)</span>
+                                                        <span className={`text-xs ${sTextSec}`}>({Object.values(cart).reduce((sum, i) => sum + i.qty, 0)} items)</span>
                                                     </h3>
 
                                                     {Object.keys(cart).length === 0 ? (
-                                                        <p className="text-xs italic text-slate-500 text-center py-6">Carrito vacío.</p>
+                                                        <p className="text-xs italic text-slate-550 text-center py-6">Carrito vacío.</p>
                                                     ) : (
                                                         <div className="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
                                                             {Object.values(cart).map(item => (
                                                                 <div key={item.ID_Producto} className="py-2.5 flex justify-between items-center text-xs">
                                                                     <div>
-                                                                        <p className="font-bold text-slate-200">{item.Nombre_Producto}</p>
-                                                                        <p className="text-slate-500 text-[10px]">${item.Precio} x {item.qty}</p>
+                                                                        <p className={`font-bold ${sTextPri}`}>{item.Nombre_Producto}</p>
+                                                                        <p className={`${sTextSec} text-[10px]`}>${item.Precio} x {item.qty}</p>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} className="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-minus"></i></button>
-                                                                        <span className="font-bold text-slate-200">{item.qty}</span>
-                                                                        <button onClick={() => addToCart(item)} className="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-plus"></i></button>
+                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} className="text-slate-400 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-minus"></i></button>
+                                                                        <span className={`font-bold ${sTextPri}`}>{item.qty}</span>
+                                                                        <button onClick={() => addToCart(item)} className="text-slate-400 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-plus"></i></button>
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -1394,28 +1552,28 @@
                                                     )}
 
                                                     {Object.keys(cart).length > 0 && (
-                                                        <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
+                                                        <div className="space-y-4 pt-3 border-t border-slate-850 text-xs">
                                                             <div>
-                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Dirección de Envío *</label>
-                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs" required />
+                                                                <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Dirección de Envío *</label>
+                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-xs`} required />
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Propina Repartidor</label>
+                                                                <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Propina Repartidor</label>
                                                                 <div className="grid grid-cols-4 gap-1">
                                                                     {[0, 5, 10, 15].map(p => (
-                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
+                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-955 text-slate-400 border-slate-800'}`}>{p}%</button>
                                                                     ))}
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Forma de Pago</label>
-                                                                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-slate-950 border border-slate-855 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs cursor-pointer">
-                                                                    <option value="Efectivo">Efectivo</option>
-                                                                    <option value="Tarjeta de Débito/Crédito">Tarjeta de Débito/Crédito</option>
-                                                                    <option value="Transferencia SPEI">Transferencia SPEI</option>
+                                                                <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Forma de Pago</label>
+                                                                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-xs cursor-pointer`}>
+                                                                    <option value="Efectivo" className={sOptionBg}>Efectivo</option>
+                                                                    <option value="Tarjeta de Débito/Crédito" className={sOptionBg}>Tarjeta de Débito/Crédito</option>
+                                                                    <option value="Transferencia SPEI" className={sOptionBg}>Transferencia SPEI</option>
                                                                 </select>
                                                                 {paymentMethod === "Efectivo" && (
-                                                                    <input type="number" placeholder="¿Con cuánto vas a pagar?" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} className="w-full mt-2 bg-slate-950 border border-slate-850 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none" required />
+                                                                    <input type="number" placeholder="¿Con cuánto vas a pagar?" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} className={`w-full mt-2 ${sBgInput} border rounded-xl px-3 py-1.5 text-xs focus:outline-none`} required />
                                                                 )}
                                                             </div>
 
@@ -1445,7 +1603,7 @@
                                         <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i className="fa-solid fa-circle-check"></i></div>
                                         <h3 className="text-xl font-black text-white">¡Pedido Enviado!</h3>
                                     </div>
-                                    <div className="p-6 space-y-4 text-xs font-mono">
+                                    <div className="p-6 space-y-4 text-xs font-mono text-slate-300">
                                         <div className="flex justify-between"><span>ID Orden:</span><span className="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
                                         <div className="flex justify-between"><span>Total:</span><span className="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
                                     </div>
@@ -1517,7 +1675,7 @@
                     </main>
 
                     {/* Master Footer */}
-                    <footer className="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 relative z-10">
+                    <footer className={`border-t py-6 text-center text-xs relative z-10 transition-colors duration-200 ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-950 border-slate-900 text-slate-500'}`}>
                         <p>© 2026 ZeloxCloud Local Hub. Una solución de automatización inteligente de Grupo DFC.</p>
                     </footer>
                 </div>
