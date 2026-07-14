@@ -69,6 +69,10 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // --- CONSTANTE DE BASE DE DATOS EDITABLE (SIN ENLACE PRE-CARGADO) ---
+        const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
+
+        // --- BASE DE DATOS REAL DE RESPALDO (8 COMERCIOS DE LA SUITE DFC) ---
         const defaultMerchants = [
             { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "dfc_cloud1@zeloxcloud.com", Contrasena: "DfCc1Oud1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620" },
             { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620" },
@@ -93,6 +97,7 @@
             { ID_Producto: "p10", ID_Comercio: "abarrotes-lara", Nombre_Producto: "Cartera de Huevo Blanco (30 pzs)", Precio: 88, Descripcion: "Huevo fresco seleccionado de la mejor calidad.", Imagen: "🥚" }
         ];
 
+        // --- STREAMING_CHUNK: Defining Helper Functions for URL transformations... ---
         const transformDriveUrl = (url) => {
             if (!url) return '';
             const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
@@ -106,6 +111,10 @@
                 return `https://docs.google.com/uc?export=view&id=${matchParam[1]}`;
             }
             return url;
+        };
+
+        const getDynamicStoreLink = (shopId) => {
+            return `${window.location.origin}${window.location.pathname}?shop=${shopId}`;
         };
 
         const playChime = () => {
@@ -123,10 +132,11 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio contextual alert pending.", e);
+                console.log("Audio context trigger waiting.", e);
             }
         };
 
+        // --- STREAMING_CHUNK: Rendering Adaptive Vector Brand Logo Component... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -148,6 +158,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: Main Application Component and State Logic... ---
         function ZeloxCloudApp() {
             const [merchants, setMerchants] = useState(() => {
                 const stored = localStorage.getItem("zc_merchants_production_v9");
@@ -165,12 +176,14 @@
                 return localStorage.getItem("zc_webhook_url_production") || "";
             });
 
+            // Navigation and Context States
             const [view, setView] = useState('login');
             const [loggedUser, setLoggedUser] = useState(null);
             const [currentShopId, setCurrentShopId] = useState('dfc-cloud');
             const [activeMerchantTab, setActiveMerchantTab] = useState('pedidos');
             const [activeAdminTab, setActiveAdminTab] = useState('comercios');
 
+            // Form inputs
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPass, setLoginPass] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -179,11 +192,15 @@
             const [promoIdea, setPromoIdea] = useState('');
             const [targetNetworks, setTargetNetworks] = useState({ facebook: true, instagram: true, whatsapp: true });
 
+            // Global modal states for overriding native alert/confirm
+            const [customAlert, setCustomAlert] = useState({ show: false, title: '', message: '' });
+            const [customConfirm, setCustomConfirm] = useState({ show: false, title: '', message: '', onConfirm: null });
+
             // Filters
             const [filterMerchant, setFilterMerchant] = useState('todos');
             const [filterPayment, setFilterPayment] = useState('todos');
 
-            // Modals
+            // Add Entity States
             const [showNewMerchantModal, setShowNewMerchantModal] = useState(false);
             const [newMerchant, setNewMerchant] = useState({
                 Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
@@ -192,7 +209,7 @@
             });
             const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
 
-            // Cart
+            // Shopping Cart State
             const [cart, setCart] = useState({});
             const [deliveryAddress, setDeliveryAddress] = useState('');
             const [tipPercent, setTipPercent] = useState(10);
@@ -205,6 +222,7 @@
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
 
+            // --- STREAMING_CHUNK: Local Cache synchronization... ---
             useEffect(() => {
                 localStorage.setItem("zc_merchants_production_v9", JSON.stringify(merchants));
             }, [merchants]);
@@ -218,7 +236,7 @@
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
             }, [webhookUrl]);
 
-            // Realtime listeners
+            // Sync multi-tabs in real-time
             useEffect(() => {
                 const handleStorageChange = (e) => {
                     if (e.key === "zc_orders_production_v9") {
@@ -234,7 +252,7 @@
                 return () => window.removeEventListener("storage", handleStorageChange);
             }, [orders]);
 
-            // QR Routing
+            // --- STREAMING_CHUNK: QR routing direct check... ---
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const shopParam = params.get('shop');
@@ -270,6 +288,7 @@
                 }
             };
 
+            // --- STREAMING_CHUNK: Authentication handling... ---
             const handleLogin = (e) => {
                 e.preventDefault();
                 setLoginError('');
@@ -334,10 +353,15 @@
             };
 
             const deleteMerchant = (id) => {
-                if (confirm("¿Eliminar definitivamente este comercio?")) {
-                    setMerchants(merchants.filter(m => m.ID_Comercio !== id));
-                    showToast("❌ Registro removido.");
-                }
+                setCustomConfirm({
+                    show: true,
+                    title: 'Eliminar Comercio',
+                    message: '¿Estás seguro de que deseas eliminar este comercio definitivamente de los registros?',
+                    onConfirm: () => {
+                        setMerchants(merchants.filter(m => m.ID_Comercio !== id));
+                        showToast("❌ Registro removido.");
+                    }
+                });
             };
 
             const handleAddProduct = (e) => {
@@ -393,15 +417,24 @@
             const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
             const finalTotal = cartTotal + deliveryFee + currentTipVal;
 
+            // --- STREAMING_CHUNK: Validating order and processing payloads... ---
             const handlePlaceOrder = (merchant) => {
                 if (!deliveryAddress.trim()) {
-                    alert("La dirección de entrega es obligatoria.");
+                    setCustomAlert({
+                        show: true,
+                        title: 'Dirección Requerida',
+                        message: 'Por favor, introduce una dirección válida para poder entregar tu pedido.'
+                    });
                     return;
                 }
                 if (paymentMethod === "Efectivo") {
                     const cash = parseFloat(cashAmount);
                     if (isNaN(cash) || cash < finalTotal) {
-                        alert(`Ingrese un monto de efectivo válido.`);
+                        setCustomAlert({
+                            show: true,
+                            title: 'Monto de Pago Inválido',
+                            message: `Por favor ingresa una cantidad de efectivo suficiente para liquidar el total de $${finalTotal.toFixed(2)} MXN.`
+                        });
                         return;
                     }
                 }
@@ -450,11 +483,15 @@
 
             const runAiAdvertising = (merchant) => {
                 if (!promoIdea.trim()) {
-                    alert("⚠️ Ingrese una idea de promoción para que trabaje la IA.");
+                    setCustomAlert({
+                        show: true,
+                        title: 'Idea de Promoción Vacía',
+                        message: 'Por favor, introduce una idea para que la Inteligencia Artificial pueda trabajar en redactar tu campaña publicitaria.'
+                    });
                     return;
                 }
                 const selectedChs = Object.keys(targetNetworks).filter(k => targetNetworks[k]);
-                const dynamicStoreLink = `${window.location.origin}${window.location.pathname}?shop=${merchant.ID_Comercio}`;
+                const link = getDynamicStoreLink(merchant.ID_Comercio);
 
                 const payloadLog = {
                     action: "AI_Autonomous_Ad",
@@ -464,13 +501,18 @@
                     socialNetworksSelected: selectedChs,
                     whatsappGroupId: merchant.WhatsApp_Group_ID,
                     facebookPageId: merchant.Facebook_Page_ID,
-                    promptInstructionsChatGPT: `Redacta una campaña publicitaria de alta conversión para las redes: ${selectedChs.join(", ")}. Adicionalmente, incluye las instrucciones para generar una fotografía publicitaria profesional para esta promoción: "${promoIdea}". Asegúrate de incorporar el enlace del comercio: ${dynamicStoreLink}`,
+                    promptInstructionsChatGPT: `Redacta una campaña publicitaria de alta conversión para las redes: ${selectedChs.join(", ")}. Adicionalmente, incluye las instrucciones para generar una fotografía publicitaria profesional para esta promoción: "${promoIdea}". Asegúrate de incorporar el enlace del comercio: ${link}`,
                     timestamp: new Date().toISOString()
                 };
 
                 setWebhookLog(prev => [JSON.stringify(payloadLog, null, 2), ...prev]);
                 triggerWebhook(payloadLog);
-                alert(`🤖 ZeloxCloud IA Publicitaria:\n\nSe ha disparado tu propuesta comercial hacia Make.com para procesar con ChatGPT y crear la publicación con foto para ${selectedChs.join(", ")}.`);
+
+                setCustomAlert({
+                    show: true,
+                    title: '🤖 Campaña Transmitida',
+                    message: `La propuesta para crear publicidad con imagen en ${selectedChs.join(", ")} fue despachada con éxito al webhook de Make para el procesamiento inteligente.`
+                });
                 setPromoIdea('');
             };
 
@@ -484,54 +526,57 @@
             const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
             const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
 
+            // --- STREAMING_CHUNK: Rendering the visual interface grid... ---
             return (
-                <div class="flex flex-col min-h-screen justify-between relative">
+                <div className="flex flex-col min-h-screen justify-between relative">
                     {notificationToast && (
-                        <div class="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200">
-                            <i class="fa-solid fa-bell"></i>
+                        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200">
+                            <i className="fa-solid fa-bell"></i>
                             <span>{notificationToast}</span>
                         </div>
                     )}
 
-                    <header class="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
-                        <div class="flex items-center gap-3.5">
+                    {/* Master Header */}
+                    <header className="bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+                        <div className="flex items-center gap-3.5">
                             <button 
                                 onClick={() => { setView('login'); window.history.pushState({}, '', window.location.pathname); }} 
-                                class="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center"
+                                className="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center"
                                 title="Volver a la pantalla principal"
                             >
-                                <i class="fa-solid fa-house"></i>
+                                <i className="fa-solid fa-house"></i>
                             </button>
                             <BrandLogo className="w-11 h-11" />
                             <div>
-                                <h1 class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
-                                    ZeloxCloud <span class="text-xs bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">Local Hub</span>
+                                <h1 className="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                                    ZeloxCloud <span className="text-xs bg-amber-500/10 text-amber-500 font-bold px-2 py-0.5 rounded-full border border-amber-500/20">Local Hub</span>
                                 </h1>
-                                <p class="text-xs text-slate-400">Automatización Comercial Inteligente por DFC</p>
+                                <p className="text-xs text-slate-400">Automatización Comercial Inteligente por DFC</p>
                             </div>
                         </div>
 
-                        <div class="flex flex-wrap items-center gap-3 md:gap-4">
+                        {/* Store Selector and user details */}
+                        <div className="flex flex-wrap items-center gap-3 md:gap-4">
                             {loggedUser ? (
-                                <div class="flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
-                                    <span class="text-xs text-slate-300">
-                                        <i class="fa-solid fa-circle-user text-amber-500 mr-2"></i>
+                                <div className="flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800">
+                                    <span className="text-xs text-slate-300">
+                                        <i className="fa-solid fa-circle-user text-amber-500 mr-2"></i>
                                         {loggedUser.email}
                                     </span>
-                                    <button onClick={handleLogout} class="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
-                                        <i class="fa-solid fa-power-off mr-1.5"></i> Salir
+                                    <button onClick={() => setLoggedUser(null)} className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center">
+                                        <i className="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
                             ) : (
                                 view !== 'login' && (
-                                    <button onClick={() => setView('login')} class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition">
-                                        <i class="fa-solid fa-lock mr-1.5"></i> Panel Privado
+                                    <button onClick={() => setView('login')} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-1.5 rounded-lg text-xs font-bold transition">
+                                        <i className="fa-solid fa-lock mr-1.5"></i> Panel Privado
                                     </button>
                                 )
                             )}
 
-                            <div class="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 text-xs">
-                                <span class="px-2 text-slate-400 font-bold"><i class="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
+                            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-lg border border-slate-800 text-xs">
+                                <span className="px-2 text-slate-400 font-bold"><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
                                     value={view === 'shop' ? currentShopId : ''}
                                     onChange={(e) => {
@@ -545,7 +590,7 @@
                                             window.history.pushState({}, '', window.location.pathname);
                                         }
                                     }}
-                                    class="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-md focus:outline-none focus:border-amber-500 font-bold"
+                                    className="bg-slate-950 border border-slate-800 text-slate-200 py-1.5 px-3 rounded-md focus:outline-none focus:border-amber-500 font-bold cursor-pointer"
                                 >
                                     <option value="">Seleccionar...</option>
                                     {merchants.map(m => (
@@ -556,146 +601,149 @@
                         </div>
                     </header>
 
-                    <main class="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
-                        {}
+                    {/* Main Workspace content */}
+                    <main className="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
+                        {/* VIEW: LOGIN */}
                         {view === 'login' && (
-                            <div class="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
-                                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
-                                <div class="text-center mb-8">
+                            <div className="max-w-md mx-auto my-12 bg-slate-900/90 backdrop-blur-lg p-8 rounded-2xl border border-slate-800/80 gold-glow relative">
+                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
+                                <div className="text-center mb-8">
                                     <BrandLogo className="w-16 h-16 rounded-full mx-auto mb-4" />
-                                    <h2 class="text-2xl font-black text-white">Ingreso de Personal</h2>
-                                    <p class="text-xs text-slate-400 mt-1">Ecosistema contable y logístico ZeloxCloud SaaS</p>
+                                    <h2 className="text-2xl font-black text-white">Ingreso de Personal</h2>
+                                    <p className="text-xs text-slate-400 mt-1">Ecosistema contable y logístico ZeloxCloud SaaS</p>
                                 </div>
 
                                 {loginError && (
-                                    <div class="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg mb-6 flex items-center gap-2">
-                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs p-3 rounded-lg mb-6 flex items-center gap-2">
+                                        <i className="fa-solid fa-triangle-exclamation"></i>
                                         <span>{loginError}</span>
                                     </div>
                                 )}
 
-                                <form onSubmit={handleLogin} class="space-y-4" autoComplete="off">
+                                <form onSubmit={handleLogin} className="space-y-4" autoComplete="off">
                                     <div>
-                                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico</label>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Correo Electrónico</label>
                                         <input 
                                             type="email" placeholder="Ingresa tu correo" value={loginEmail}
                                             onChange={(e) => setLoginEmail(e.target.value)}
-                                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
                                             autoComplete="new-password" required
                                         />
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Contraseña</label>
+                                        <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Contraseña</label>
                                         <input 
                                             type="password" placeholder="Ingresa tu contraseña" value={loginPass}
                                             onChange={(e) => setLoginPass(e.target.value)}
-                                            class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
+                                            className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-700 focus:outline-none focus:border-amber-500 text-sm"
                                             autoComplete="new-password" required
                                         />
                                     </div>
-                                    <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg transition mt-4">
+                                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg transition mt-4">
                                         Iniciar Sesión
                                     </button>
                                 </form>
                             </div>
                         )}
 
+                        {/* --- STREAMING_CHUNK: Suspend state handling... --- */}
                         {showBlockedScreen && (
-                            <div class="max-w-lg mx-auto my-12 bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative">
-                                <div class="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
-                                    <i class="fa-solid fa-ban"></i>
+                            <div className="max-w-lg mx-auto my-12 bg-slate-900 border border-red-500/30 p-8 rounded-2xl text-center shadow-2xl relative">
+                                <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                                    <i className="fa-solid fa-ban"></i>
                                 </div>
-                                <h2 class="text-2xl font-black text-red-400">SERVICIO SUSPENDIDO</h2>
-                                <h3 class="text-lg font-bold text-white mt-2">{blockedMerchantName}</h3>
-                                <p class="text-slate-400 mt-4 text-sm leading-relaxed">
+                                <h2 className="text-2xl font-black text-red-400">SERVICIO SUSPENDIDO</h2>
+                                <h3 className="text-lg font-bold text-white mt-2">{blockedMerchantName}</h3>
+                                <p className="text-slate-400 mt-4 text-sm leading-relaxed">
                                     El acceso al panel y el menú digital para este comercio han sido desactivados debido a la falta de pago de la membresía.
                                 </p>
-                                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 my-6 text-left space-y-2 text-xs">
-                                    <p class="text-slate-400 font-bold uppercase tracking-wider">Contacto de Reactivación DFC:</p>
-                                    <p class="text-slate-200"><i class="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
-                                    <p class="text-slate-200"><i class="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
+                                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 my-6 text-left space-y-2 text-xs">
+                                    <p className="text-slate-400 font-bold uppercase tracking-wider">Contacto de Reactivación DFC:</p>
+                                    <p className="text-slate-200"><i className="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
+                                    <p className="text-slate-200"><i className="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
                                 </div>
-                                <button onClick={() => setShowBlockedScreen(false)} class="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold">
+                                <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold">
                                     Cerrar Ventana
                                 </button>
                             </div>
                         )}
 
-                        {}
+                        {/* VIEW: SUPER ADMIN */}
                         {view === 'super_admin' && (
                             <div>
-                                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                                     <div>
-                                        <div class="flex items-center gap-3">
-                                            <span class="text-xs bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider">SUPER-ADMIN</span>
-                                            <h2 class="text-3xl font-black text-white">Consola de Control Juan Guerrero</h2>
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs bg-amber-500 text-slate-950 font-extrabold px-2.5 py-1 rounded-md uppercase tracking-wider">SUPER-ADMIN</span>
+                                            <h2 className="text-3xl font-black text-white">Consola de Control Juan Guerrero</h2>
                                         </div>
-                                        <p class="text-sm text-slate-400 mt-1">Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
+                                        <p className="text-sm text-slate-400 mt-1">Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
                                     </div>
-                                    <button onClick={() => setShowNewMerchantModal(true)} class="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
-                                        <i class="fa-solid fa-plus-circle text-lg"></i> Registrar Comercio
+                                    <button onClick={() => setShowNewMerchantModal(true)} className="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
+                                        <i className="fa-solid fa-plus-circle text-lg"></i> Registrar Comercio
                                     </button>
                                 </div>
 
-                                <div class="flex flex-wrap gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
-                                    <button onClick={() => setActiveAdminTab('comercios')} class={`pb-3 px-4 transition ${activeAdminTab === 'comercios' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                        <i class="fa-solid fa-store mr-2"></i> Directorio de Clientes ({merchants.length})
+                                <div className="flex flex-wrap gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                    <button onClick={() => setActiveAdminTab('comercios')} className={`pb-3 px-4 transition ${activeAdminTab === 'comercios' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i className="fa-solid fa-store mr-2"></i> Directorio de Clientes ({merchants.length})
                                     </button>
-                                    <button onClick={() => setActiveAdminTab('ordenes_globales')} class={`pb-3 px-4 transition ${activeAdminTab === 'ordenes_globales' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                        <i class="fa-solid fa-chart-line mr-2"></i> Órdenes Globales & Reportes
+                                    <button onClick={() => setActiveAdminTab('ordenes_globales')} className={`pb-3 px-4 transition ${activeAdminTab === 'ordenes_globales' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i className="fa-solid fa-chart-line mr-2"></i> Órdenes Globales & Reportes
                                     </button>
-                                    <button onClick={() => setActiveAdminTab('db')} class={`pb-3 px-4 transition ${activeAdminTab === 'db' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                        <i class="fa-solid fa-database mr-2"></i> Auditoría de Google Sheets
+                                    <button onClick={() => setActiveAdminTab('db')} className={`pb-3 px-4 transition ${activeAdminTab === 'db' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                        <i className="fa-solid fa-database mr-2"></i> Auditoría de Google Sheets
                                     </button>
                                 </div>
 
+                                {/* ADMIN TAB: MERCHANTS DIRECTORY */}
                                 {activeAdminTab === 'comercios' && (
-                                    <div class="bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-                                        <div class="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
-                                            <h3 class="font-bold text-lg text-white">Comercios Afiliados</h3>
+                                    <div className="bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                                        <div className="p-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50">
+                                            <h3 className="font-bold text-lg text-white">Comercios Afiliados</h3>
                                         </div>
-                                        <div class="overflow-x-auto">
-                                            <table class="w-full text-left border-collapse">
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left border-collapse">
                                                 <thead>
-                                                    <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-bold bg-slate-950/40">
-                                                        <th class="p-4">Foto / Comercio</th>
-                                                        <th class="p-4">Credenciales</th>
-                                                        <th class="p-4">Estatus del SaaS</th>
-                                                        <th class="p-4">WhatsApp Logístico</th>
-                                                        <th class="p-4 text-center">Controles</th>
+                                                    <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider font-bold bg-slate-950/40">
+                                                        <th className="p-4">Foto / Comercio</th>
+                                                        <th className="p-4">Credenciales</th>
+                                                        <th className="p-4">Estatus del SaaS</th>
+                                                        <th className="p-4">WhatsApp Logístico</th>
+                                                        <th className="p-4 text-center">Controles</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody class="divide-y divide-slate-800">
+                                                <tbody className="divide-y divide-slate-800">
                                                     {merchants.map((m) => (
-                                                        <tr key={m.ID_Comercio} class="hover:bg-slate-800/40 transition">
-                                                            <td class="p-4 flex items-center gap-3">
-                                                                <img src={transformDriveUrl(m.FotoUrl)} alt={m.Nombre} class="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                                        <tr key={m.ID_Comercio} className="hover:bg-slate-800/40 transition">
+                                                            <td className="p-4 flex items-center gap-3">
+                                                                <img src={transformDriveUrl(m.FotoUrl)} alt={m.Nombre} className="w-12 h-12 rounded-lg object-cover border border-slate-700" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
                                                                 <div>
-                                                                    <div class="font-bold text-white text-base">{m.Nombre}</div>
-                                                                    <div class="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
-                                                                    <div class="text-[10px] text-slate-500 font-mono mt-0.5">ID: {m.ID_Comercio}</div>
+                                                                    <div className="font-bold text-white text-base">{m.Nombre}</div>
+                                                                    <div className="text-xs text-amber-500 font-semibold">{m.Categoria}</div>
+                                                                    <div className="text-[10px] text-slate-500 font-mono mt-0.5">ID: {m.ID_Comercio}</div>
                                                                 </div>
                                                             </td>
-                                                            <td class="p-4">
-                                                                <div class="text-xs font-mono text-slate-300">{m.Usuario}</div>
-                                                                <div class="text-xs text-slate-500 mt-1 font-mono">Clave: {m.Contrasena}</div>
+                                                            <td className="p-4">
+                                                                <div className="text-xs font-mono text-slate-300">{m.Usuario}</div>
+                                                                <div className="text-xs text-slate-500 mt-1 font-mono">Clave: {m.Contrasena}</div>
                                                             </td>
-                                                            <td class="p-4">
-                                                                <span class={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 border ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
-                                                                    <span class={`w-1.5 h-1.5 rounded-full ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-400" : "bg-red-400"}`}></span>
+                                                            <td className="p-4">
+                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold inline-flex items-center gap-1.5 border ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"}`}>
+                                                                    <span className={`w-1.5 h-1.5 rounded-full ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? "bg-emerald-400" : "bg-red-400"}`}></span>
                                                                     {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Al corriente" : "Suspendido"}
                                                                 </span>
                                                             </td>
-                                                            <td class="p-4 text-xs font-mono text-slate-300">
+                                                            <td className="p-4 text-xs font-mono text-slate-300">
                                                                 {m.WhatsApp_Group_ID || 'N/A'}
                                                             </td>
-                                                            <td class="p-4">
-                                                                <div class="flex justify-center gap-2">
-                                                                    <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} class={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
+                                                            <td className="p-4">
+                                                                <div className="flex justify-center gap-2">
+                                                                    <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
                                                                         {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Suspender" : "Activar"}
                                                                     </button>
-                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} class="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border border-slate-700">
-                                                                        <i class="fa-solid fa-trash"></i>
+                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border border-slate-700">
+                                                                        <i className="fa-solid fa-trash"></i>
                                                                     </button>
                                                                 </div>
                                                             </td>
@@ -707,36 +755,37 @@
                                     </div>
                                 )}
 
+                                {/* --- STREAMING_CHUNK: Global orders filter block rendering... --- */}
                                 {activeAdminTab === 'ordenes_globales' && (
-                                    <div class="space-y-6">
-                                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ventas Brutas Totales</p>
-                                                <h4 class="text-2xl font-black text-amber-500">${totalRevenue.toFixed(2)} MXN</h4>
+                                    <div className="space-y-6">
+                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ventas Brutas Totales</p>
+                                                <h4 className="text-2xl font-black text-amber-500">${totalRevenue.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ticket Promedio</p>
-                                                <h4 class="text-2xl font-black text-emerald-400">${avgTicket.toFixed(2)} MXN</h4>
+                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Ticket Promedio</p>
+                                                <h4 className="text-2xl font-black text-emerald-400">${avgTicket.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Comisión DFC</p>
-                                                <h4 class="text-2xl font-black text-blue-400">${totalDelivery.toFixed(2)} MXN</h4>
+                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Comisión DFC</p>
+                                                <h4 className="text-2xl font-black text-blue-400">${totalDelivery.toFixed(2)} MXN</h4>
                                             </div>
-                                            <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                                                <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total de Pedidos</p>
-                                                <h4 class="text-2xl font-black text-purple-400">{filteredOrders.length} Órdenes</h4>
+                                            <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                                                <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mb-1">Total de Pedidos</p>
+                                                <h4 className="text-2xl font-black text-purple-400">{filteredOrders.length} Órdenes</h4>
                                             </div>
                                         </div>
 
-                                        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                                            <div class="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
-                                                <h3 class="font-bold text-lg text-white">Historial Global de Transacciones</h3>
-                                                <div class="flex flex-wrap gap-2 text-slate-200">
-                                                    <select value={filterMerchant} onChange={(e) => setFilterMerchant(e.target.value)} class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none">
+                                        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                                            <div className="p-6 border-b border-slate-800 bg-slate-900/50 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold">
+                                                <h3 className="font-bold text-lg text-white">Historial Global de Transacciones</h3>
+                                                <div className="flex flex-wrap gap-2 text-slate-200">
+                                                    <select value={filterMerchant} onChange={(e) => setFilterMerchant(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
                                                         <option value="todos">Todos los comercios</option>
                                                         {merchants.map(m => <option key={m.ID_Comercio} value={m.ID_Comercio}>{m.Nombre}</option>)}
                                                     </select>
-                                                    <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none">
+                                                    <select value={filterPayment} onChange={(e) => setFilterPayment(e.target.value)} className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer">
                                                         <option value="todos">Todos los métodos de pago</option>
                                                         <option value="Efectivo">Efectivo</option>
                                                         <option value="Tarjeta de Débito/Crédito">Tarjeta</option>
@@ -744,30 +793,30 @@
                                                     </select>
                                                 </div>
                                             </div>
-                                            <div class="overflow-x-auto">
-                                                <table class="w-full text-left border-collapse">
+                                            <div className="overflow-x-auto">
+                                                <table className="w-full text-left border-collapse">
                                                     <thead>
-                                                        <tr class="bg-slate-950/40 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-800">
-                                                            <th class="p-4">ID / Comercio</th>
-                                                            <th class="p-4">Cliente / Dirección</th>
-                                                            <th class="p-4">Detalle de Compra</th>
-                                                            <th class="p-4">Método de Pago</th>
-                                                            <th class="p-4 text-right">Total</th>
+                                                        <tr className="bg-slate-950/40 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-800">
+                                                            <th className="p-4">ID / Comercio</th>
+                                                            <th className="p-4">Cliente / Dirección</th>
+                                                            <th className="p-4">Detalle de Compra</th>
+                                                            <th className="p-4">Método de Pago</th>
+                                                            <th className="p-4 text-right">Total</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="divide-y divide-slate-800 text-sm">
+                                                    <tbody className="divide-y divide-slate-800 text-sm">
                                                         {filteredOrders.length === 0 ? (
                                                             <tr><td colSpan="5" class="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
                                                         ) : (
                                                             filteredOrders.map(o => {
                                                                 const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
                                                                 return (
-                                                                    <tr key={o.ID_Orden} class="hover:bg-slate-800/20 transition">
-                                                                        <td class="p-4 font-mono"><span class="text-amber-500 font-bold block">{o.ID_Orden}</span><span class="text-[10px] text-slate-500 uppercase">{name}</span></td>
-                                                                        <td class="p-4"><div class="font-bold text-slate-200">{o.Cliente}</div><div class="text-xs text-slate-400">{o.Direccion}</div></td>
-                                                                        <td class="p-4 text-slate-300 font-mono text-xs max-w-xs truncate">{o.Detalle_Productos}</td>
-                                                                        <td class="p-4"><div class="text-xs font-semibold">{o.Metodo_Pago}</div></td>
-                                                                        <td class="p-4 text-right font-black text-white text-base">${o.Total} MXN</td>
+                                                                    <tr key={o.ID_Orden} className="hover:bg-slate-800/20 transition">
+                                                                        <td className="p-4 font-mono"><span className="text-amber-500 font-bold block">{o.ID_Orden}</span><span className="text-[10px] text-slate-500 uppercase">{name}</span></td>
+                                                                        <td className="p-4"><div className="font-bold text-slate-200">{o.Cliente}</div><div className="text-xs text-slate-400">{o.Direccion}</div></td>
+                                                                        <td className="p-4 text-slate-300 font-mono text-xs max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                        <td className="p-4"><div className="text-xs font-semibold">{o.Metodo_Pago}</div></td>
+                                                                        <td className="p-4 text-right font-black text-white text-base">${o.Total} MXN</td>
                                                                     </tr>
                                                                 );
                                                             })
@@ -780,55 +829,55 @@
                                 )}
 
                                 {activeAdminTab === 'db' && (
-                                    <div class="space-y-6">
-                                        <div class="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800 space-y-4">
-                                            <h3 class="font-bold text-lg text-white"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
-                                            <div class="max-w-xl">
-                                                <label class="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">URL de Webhook Maestro (Make.com)</label>
-                                                <div class="flex gap-2">
+                                    <div className="space-y-6">
+                                        <div className="bg-slate-900/90 backdrop-blur-md p-6 rounded-2xl border border-slate-800 space-y-4">
+                                            <h3 className="font-bold text-lg text-white"><i class="fa-solid fa-link text-amber-500 mr-2"></i>Configuración de Webhook Bilateral</h3>
+                                            <div className="max-w-xl">
+                                                <label className="block text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">URL de Webhook Maestro (Make.com)</label>
+                                                <div className="flex gap-2">
                                                     <input 
                                                         type="text" 
                                                         placeholder="https://hook.us2.make.com/..." 
                                                         value={webhookUrl} 
                                                         onChange={(e) => setWebhookUrl(e.target.value)} 
-                                                        class="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500"
+                                                        className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500"
                                                     />
-                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition">
+                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition">
                                                         Guardar
                                                     </button>
                                                 </div>
-                                                <p class="text-[10px] text-slate-500 mt-2">Esta URL recibirá todos los disparos JSON para actualizar tu Google Sheets e interactuar de forma bilateral.</p>
+                                                <p className="text-[10px] text-slate-500 mt-2">Esta URL recibirá todos los disparos JSON para actualizar tu Google Sheets e interactuar de forma bilateral.</p>
                                             </div>
                                         </div>
 
-                                        <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                                            <div class="bg-emerald-950/30 p-4 border-b border-slate-800 flex justify-between items-center text-xs font-mono">
-                                                <span class="font-bold text-emerald-400">Tabla: Configuracion_Comercios</span>
-                                                <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
+                                        <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                            <div className="bg-emerald-950/30 p-4 border-b border-slate-800 flex justify-between items-center text-xs font-mono">
+                                                <span className="font-bold text-emerald-400">Tabla: Configuracion_Comercios</span>
+                                                <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
                                             </div>
-                                            <div class="overflow-x-auto text-[11px] font-mono p-2">
-                                                <table class="w-full text-left bg-slate-950 rounded-lg">
+                                            <div className="overflow-x-auto text-[11px] font-mono p-2">
+                                                <table className="w-full text-left bg-slate-950 rounded-lg">
                                                     <thead>
-                                                        <tr class="bg-slate-900 text-slate-400 border-b border-slate-800">
-                                                            <th class="p-2 border-r border-slate-800">ID_Comercio</th>
-                                                            <th class="p-2 border-r border-slate-800">Nombre</th>
-                                                            <th class="p-2 border-r border-slate-800">Usuario</th>
-                                                            <th class="p-2 border-r border-slate-800">Contrasena</th>
-                                                            <th class="p-2 border-r border-slate-800">Estatus</th>
-                                                            <th class="p-2 border-r border-slate-800">Categoria</th>
-                                                            <th class="p-2">Contacto</th>
+                                                        <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
+                                                            <th className="p-2 border-r border-slate-800">ID_Comercio</th>
+                                                            <th className="p-2 border-r border-slate-800">Nombre</th>
+                                                            <th className="p-2 border-r border-slate-800">Usuario</th>
+                                                            <th className="p-2 border-r border-slate-800">Contrasena</th>
+                                                            <th className="p-2 border-r border-slate-800">Estatus</th>
+                                                            <th className="p-2 border-r border-slate-800">Categoria</th>
+                                                            <th className="p-2">Contacto</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody class="divide-y divide-slate-800 text-slate-300">
+                                                    <tbody className="divide-y divide-slate-800 text-slate-300">
                                                         {merchants.map(m => (
                                                             <tr key={m.ID_Comercio}>
-                                                                <td class="p-2 border-r border-slate-800">{m.ID_Comercio}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Nombre}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Usuario}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Contrasena}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Estatus}</td>
-                                                                <td class="p-2 border-r border-slate-800">{m.Categoria}</td>
-                                                                <td class="p-2">{m.Contacto}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.ID_Comercio}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.Nombre}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.Usuario}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.Contrasena}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.Estatus}</td>
+                                                                <td className="p-2 border-r border-slate-800">{m.Categoria}</td>
+                                                                <td className="p-2">{m.Contacto}</td>
                                                             </tr>
                                                         ))}
                                                     </tbody>
@@ -836,13 +885,13 @@
                                             </div>
                                         </div>
 
-                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                            <h4 class="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Historial de Salida JSON (Webhook live-stream)</h4>
-                                            <div class="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800">
+                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                            <h4 className="font-bold text-sm text-slate-200 mb-3 flex items-center gap-2">Historial de Salida JSON (Webhook live-stream)</h4>
+                                            <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800">
                                                 {webhookLog.length === 0 ? (
-                                                    <span class="text-slate-600 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
+                                                    <span className="text-slate-600 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
                                                 ) : (
-                                                    webhookLog.map((log, index) => <pre key={index} class="text-emerald-400 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 overflow-x-auto mt-2">{log}</pre>)
+                                                    webhookLog.map((log, index) => <pre key={index} className="text-emerald-400 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 overflow-x-auto mt-2">{log}</pre>)
                                                 )}
                                             </div>
                                         </div>
@@ -851,22 +900,23 @@
                             </div>
                         )}
 
+                        {/* --- STREAMING_CHUNK: Register merchant dialog modal... --- */}
                         {showNewMerchantModal && (
-                            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
-                                <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
-                                    <div class="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
-                                        <h3 class="font-black text-lg text-white">Registrar Nuevo Comercio</h3>
-                                        <button onClick={() => setShowNewMerchantModal(false)} class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                                <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
+                                        <h3 className="font-black text-lg text-white">Registrar Nuevo Comercio</h3>
+                                        <button onClick={() => setShowNewMerchantModal(false)} className="text-slate-400 hover:text-white text-lg"><i className="fa-solid fa-xmark"></i></button>
                                     </div>
-                                    <form onSubmit={createMerchant} class="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <form onSubmit={createMerchant} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre del Comercio *</label>
-                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre del Comercio *</label>
+                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
-                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
-                                                <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
+                                                <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
                                                     <option value="Servicios">Servicios</option>
                                                     <option value="Restaurante">Restaurante</option>
                                                     <option value="Tecnología">Tecnología</option>
@@ -875,42 +925,42 @@
                                             </div>
                                         </div>
                                         <div>
-                                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Drive / Enlace Directo)</label>
-                                            <input type="url" placeholder="Pegar enlace aquí" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
+                                            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">URL de Foto del Comercio (Drive / Enlace Directo)</label>
+                                            <input type="url" placeholder="Pegar enlace aquí" value={newMerchant.FotoUrl} onChange={(e) => setNewMerchant({...newMerchant, FotoUrl: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" />
                                         </div>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
-                                                <input type="text" placeholder="Nombre" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
+                                                <input type="text" placeholder="Nombre" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
-                                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Teléfono Principal *</label>
-                                                <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Teléfono Principal *</label>
+                                                <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                         </div>
-                                        <div class="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
-                                            <p class="text-xs font-bold text-amber-500 uppercase tracking-widest">Credenciales de Acceso (Comercio)</p>
-                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                                            <p className="text-xs font-bold text-amber-500 uppercase tracking-widest">Credenciales de Acceso (Comercio)</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 <div>
-                                                    <label class="block text-[10px] uppercase text-slate-400 mb-1">Email de Usuario *</label>
-                                                    <input type="email" placeholder="usuario@zeloxcloud.com" value={newMerchant.Usuario} onChange={(e) => setNewMerchant({...newMerchant, Usuario: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                    <label className="block text-[10px] uppercase text-slate-400 mb-1">Email de Usuario *</label>
+                                                    <input type="email" placeholder="usuario@zeloxcloud.com" value={newMerchant.Usuario} onChange={(e) => setNewMerchant({...newMerchant, Usuario: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
                                                 </div>
                                                 <div>
-                                                    <label class="block text-[10px] uppercase text-slate-400 mb-1">Contraseña *</label>
-                                                    <input type="text" placeholder="Contraseña" value={newMerchant.Contrasena} onChange={(e) => setNewMerchant({...newMerchant, Contrasena: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                    <label className="block text-[10px] uppercase text-slate-400 mb-1">Contraseña *</label>
+                                                    <input type="text" placeholder="Contraseña" value={newMerchant.Contrasena} onChange={(e) => setNewMerchant({...newMerchant, Contrasena: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="pt-4 flex gap-3">
-                                            <button type="button" onClick={() => setShowNewMerchantModal(false)} class="w-1/2 bg-slate-850 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
-                                            <button type="submit" class="w-1/2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar Comercio</button>
+                                        <div className="pt-4 flex gap-3">
+                                            <button type="button" onClick={() => setShowNewMerchantModal(false)} className="w-1/2 bg-slate-850 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
+                                            <button type="submit" className="w-1/2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar Comercio</button>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         )}
 
-                        {}
+                        {/* VIEW: CLIENT MERCHANT WORKSPACE */}
                         {view === 'merchant' && (
                             <div>
                                 {(() => {
@@ -918,75 +968,76 @@
                                     if (!merchant) return null;
                                     return (
                                         <div>
-                                            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                                                <div class="flex items-center gap-4">
-                                                    <img src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} class="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
+                                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                                                <div className="flex items-center gap-4">
+                                                    <img src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} alt={merchant.Nombre} className="w-16 h-16 rounded-2xl object-cover border-2 border-amber-500/30 shadow-lg" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} />
                                                     <div>
-                                                        <div class="flex items-center gap-2.5">
-                                                            <span class="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
-                                                            <h2 class="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                        <div className="flex items-center gap-2.5">
+                                                            <span className="text-xs bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2.5 py-1 rounded">COMERCIO AFILIADO</span>
+                                                            <h2 className="text-3xl font-black text-white">{merchant.Nombre}</h2>
                                                         </div>
-                                                        <p class="text-sm text-slate-400 mt-1">SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
+                                                        <p className="text-sm text-slate-400 mt-1">SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
                                                     </div>
                                                 </div>
-                                                <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-1 text-slate-400">
-                                                    <div>Estatus: <span class="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
-                                                    <div>WhatsApp ID: <span class="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
+                                                <div className="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs space-y-1 text-slate-400">
+                                                    <div>Estatus: <span className="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
+                                                    <div>WhatsApp ID: <span className="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
                                                 </div>
                                             </div>
 
-                                            <div class="flex gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
-                                                <button onClick={() => setActiveMerchantTab('pedidos')} class={`pb-3 px-4 transition ${activeMerchantTab === 'pedidos' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                                    <i class="fa-solid fa-bell-concierge mr-2"></i> Pedidos en Vivo
-                                                    <span class="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{orders.filter(o => o.ID_Comercio === merchant.ID_Comercio && o.Estado !== "Entregado").length}</span>
+                                            <div className="flex gap-2 border-b border-slate-800 mb-6 font-bold text-sm">
+                                                <button onClick={() => setActiveMerchantTab('pedidos')} className={`pb-3 px-4 transition ${activeMerchantTab === 'pedidos' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i className="fa-solid fa-bell-concierge mr-2"></i> Pedidos en Vivo
+                                                    <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{orders.filter(o => o.ID_Comercio === merchant.ID_Comercio && o.Estado !== "Entregado").length}</span>
                                                 </button>
-                                                <button onClick={() => setActiveMerchantTab('catalogo')} class={`pb-3 px-4 transition ${activeMerchantTab === 'catalogo' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                                    <i class="fa-solid fa-list-check mr-2"></i> Mi Catálogo
+                                                <button onClick={() => setActiveMerchantTab('catalogo')} className={`pb-3 px-4 transition ${activeMerchantTab === 'catalogo' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i className="fa-solid fa-list-check mr-2"></i> Mi Catálogo
                                                 </button>
-                                                <button onClick={() => setActiveMerchantTab('config')} class={`pb-3 px-4 transition ${activeMerchantTab === 'config' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
-                                                    <i class="fa-solid fa-bullhorn mr-2"></i> Configuración y Publicidad IA
+                                                <button onClick={() => setActiveMerchantTab('config')} className={`pb-3 px-4 transition ${activeMerchantTab === 'config' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
+                                                    <i className="fa-solid fa-bullhorn mr-2"></i> Configuración y Publicidad IA
                                                 </button>
                                             </div>
 
+                                            {/* --- STREAMING_CHUNK: Processing orders section... --- */}
                                             {activeMerchantTab === 'pedidos' && (
-                                                <div class="space-y-4">
-                                                    <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                                                        <div class="overflow-x-auto">
-                                                            <table class="w-full text-left border-collapse">
+                                                <div className="space-y-4">
+                                                    <div className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
+                                                        <div className="overflow-x-auto">
+                                                            <table className="w-full text-left border-collapse">
                                                                 <thead>
-                                                                    <tr class="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-850">
-                                                                        <th class="p-4">ID de Pedido</th>
-                                                                        <th class="p-4">Cliente / Dirección</th>
-                                                                        <th class="p-4">Productos</th>
-                                                                        <th class="p-4">Método de Pago</th>
-                                                                        <th class="p-4">Total</th>
-                                                                        <th class="p-4 text-center">Control de Despacho</th>
+                                                                    <tr className="bg-slate-950 text-slate-400 text-xs uppercase tracking-wider font-bold border-b border-slate-850">
+                                                                        <th className="p-4">ID de Pedido</th>
+                                                                        <th className="p-4">Cliente / Dirección</th>
+                                                                        <th className="p-4">Productos</th>
+                                                                        <th className="p-4">Método de Pago</th>
+                                                                        <th className="p-4">Total</th>
+                                                                        <th className="p-4 text-center">Control de Despacho</th>
                                                                     </tr>
                                                                 </thead>
-                                                                <tbody class="divide-y divide-slate-800 text-sm">
+                                                                <tbody className="divide-y divide-slate-800 text-sm">
                                                                     {orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                                        <tr><td colSpan="6" class="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
+                                                                        <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
                                                                     ) : (
                                                                         orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).map(o => (
-                                                                            <tr key={o.ID_Orden} class={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
-                                                                                <td class="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
-                                                                                <td class="p-4">
-                                                                                    <div class="font-bold text-white">{o.Cliente}</div>
-                                                                                    <div class="text-xs text-slate-400 flex items-center gap-1.5 mt-1"><i class="fa-solid fa-location-dot text-slate-500"></i>{o.Direccion}</div>
+                                                                            <tr key={o.ID_Orden} className={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
+                                                                                <td className="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
+                                                                                <td className="p-4">
+                                                                                    <div className="font-bold text-white">{o.Cliente}</div>
+                                                                                    <div className="text-xs text-slate-400 flex items-center gap-1.5 mt-1"><i className="fa-solid fa-location-dot text-slate-500"></i>{o.Direccion}</div>
                                                                                 </td>
-                                                                                <td class="p-4 text-slate-300 font-medium max-w-xs truncate">{o.Detalle_Productos}</td>
-                                                                                <td class="p-4 text-xs font-semibold">
-                                                                                    <span class="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-300">{o.Metodo_Pago}</span>
-                                                                                    {o.Cambio > 0 && <p class="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
+                                                                                <td className="p-4 text-slate-300 font-medium max-w-xs truncate">{o.Detalle_Productos}</td>
+                                                                                <td className="p-4 text-xs font-semibold">
+                                                                                    <span className="bg-slate-950 px-2 py-1 rounded border border-slate-800 text-slate-300">{o.Metodo_Pago}</span>
+                                                                                    {o.Cambio > 0 && <p className="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
                                                                                 </td>
-                                                                                <td class="p-4 font-black text-white text-base">${o.Total} MXN</td>
-                                                                                <td class="p-4 text-center">
+                                                                                <td className="p-4 font-black text-white text-base">${o.Total} MXN</td>
+                                                                                <td className="p-4 text-center">
                                                                                     {o.Estado === "Entregado" ? (
-                                                                                        <span class="bg-emerald-500/10 text-emerald-400 font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center justify-center gap-1.5 w-max mx-auto">
-                                                                                            <i class="fa-solid fa-circle-check"></i> Entregado
+                                                                                        <span className="bg-emerald-500/10 text-emerald-400 font-bold text-xs px-3 py-1.5 rounded-lg border border-emerald-500/20 flex items-center justify-center gap-1.5 w-max mx-auto">
+                                                                                            <i className="fa-solid fa-circle-check"></i> Entregado
                                                                                         </span>
                                                                                     ) : (
-                                                                                        <button onClick={() => advanceOrderState(o.ID_Orden)} class={`px-4 py-2 rounded-lg text-xs font-black transition w-max mx-auto flex items-center gap-2 ${o.Estado === "Nuevo" ? 'bg-amber-500 text-slate-950 shadow-lg hover:bg-amber-600' : 'bg-blue-600 text-white shadow-lg hover:bg-blue-500'}`}>
+                                                                                        <button onClick={() => advanceOrderState(o.ID_Orden)} className={`px-4 py-2 rounded-lg text-xs font-black transition w-max mx-auto flex items-center gap-2 ${o.Estado === "Nuevo" ? 'bg-amber-500 text-slate-950 shadow-lg hover:bg-amber-600' : 'bg-blue-600 text-white shadow-lg hover:bg-blue-500'}`}>
                                                                                             {o.Estado === "Nuevo" ? "Despachar / En Ruta" : "Confirmar Entrega"}
                                                                                         </button>
                                                                                     )}
@@ -1002,22 +1053,22 @@
                                             )}
 
                                             {activeMerchantTab === 'catalogo' && (
-                                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
-                                                        <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3"><i class="fa-solid fa-circle-plus text-amber-500 mr-2"></i>Nuevo Producto</h3>
-                                                        <form onSubmit={handleAddProduct} class="space-y-4 text-sm">
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 h-max space-y-4">
+                                                        <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3"><i className="fa-solid fa-circle-plus text-amber-500 mr-2"></i>Nuevo Producto</h3>
+                                                        <form onSubmit={handleAddProduct} className="space-y-4 text-sm">
                                                             <div>
-                                                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nombre del Producto *</label>
-                                                                <input type="text" placeholder="ej. Asesoría Contable" value={newProduct.Nombre_Producto} onChange={(e) => setNewProduct({...newProduct, Nombre_Producto: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nombre del Producto *</label>
+                                                                <input type="text" placeholder="ej. Asesoría Contable" value={newProduct.Nombre_Producto} onChange={(e) => setNewProduct({...newProduct, Nombre_Producto: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
                                                             </div>
-                                                            <div class="grid grid-cols-2 gap-4">
+                                                            <div className="grid grid-cols-2 gap-4">
                                                                 <div>
-                                                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Precio (MXN) *</label>
-                                                                    <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
+                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Precio (MXN) *</label>
+                                                                    <input type="number" placeholder="1500" value={newProduct.Precio} onChange={(e) => setNewProduct({...newProduct, Precio: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500" required />
                                                                 </div>
                                                                 <div>
-                                                                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Emoji</label>
-                                                                    <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
+                                                                    <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Icono / Emoji</label>
+                                                                    <select value={newProduct.Imagen} onChange={(e) => setNewProduct({...newProduct, Imagen: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500">
                                                                         <option value="💼">💼 Servicios</option>
                                                                         <option value="🚀">🚀 SaaS</option>
                                                                         <option value="🌶️">🌶️ Salsa</option>
@@ -1027,31 +1078,31 @@
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
-                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                                                                <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Descripción</label>
+                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none"></textarea>
                                                             </div>
-                                                            <button type="submit" class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar en Catálogo</button>
+                                                            <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar en Catálogo</button>
                                                         </form>
                                                     </div>
 
-                                                    <div class="lg:col-span-2 space-y-4">
-                                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800">
-                                                            <h3 class="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
-                                                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="lg:col-span-2 space-y-4">
+                                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800">
+                                                            <h3 className="font-bold text-lg text-white mb-4">Productos en Menú / Catálogo Activo</h3>
+                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                 {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                                    <p class="text-slate-500 italic col-span-2 text-center py-6">Catálogo vacío.</p>
+                                                                    <p className="text-slate-500 italic col-span-2 text-center py-6">Catálogo vacío.</p>
                                                                 ) : (
                                                                     products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
-                                                                        <div key={p.ID_Producto} class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
+                                                                        <div key={p.ID_Producto} className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex justify-between items-start">
                                                                             <div class="flex gap-3">
-                                                                                <span class="text-3xl p-2 bg-slate-900 rounded-lg">{p.Imagen}</span>
+                                                                                <span className="text-3xl p-2 bg-slate-900 rounded-lg">{p.Imagen}</span>
                                                                                 <div>
-                                                                                    <h4 class="font-bold text-white text-sm">{p.Nombre_Producto}</h4>
-                                                                                    <p class="text-xs text-slate-400 mt-1 line-clamp-2">{p.Descripcion}</p>
-                                                                                    <span class="text-xs text-amber-500 font-extrabold block mt-2">${p.Precio} MXN</span>
+                                                                                    <h4 className="font-bold text-white text-sm">{p.Nombre_Producto}</h4>
+                                                                                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">{p.Descripcion}</p>
+                                                                                    <span className="text-xs text-amber-500 font-extrabold block mt-2">${p.Precio} MXN</span>
                                                                                 </div>
                                                                             </div>
-                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} class="text-slate-650 hover:text-red-400 p-1"><i class="fa-solid fa-trash-can"></i></button>
+                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} className="text-slate-650 hover:text-red-400 p-1"><i className="fa-solid fa-trash-can"></i></button>
                                                                         </div>
                                                                     ))
                                                                 )}
@@ -1061,48 +1112,49 @@
                                                 </div>
                                             )}
 
+                                            {/* --- STREAMING_CHUNK: Configuration and Marketing AI rendering... --- */}
                                             {activeMerchantTab === 'config' && (
-                                                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                    <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
-                                                        <div class="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i class="fa-solid fa-robot"></i></div>
-                                                        <h3 class="font-bold text-lg text-white">Marketing Inteligente IA</h3>
-                                                        <p class="text-xs text-slate-400 mt-1">Escribe tu idea comercial y selecciona a qué redes deseas enviarla para que ChatGPT genere tu posteo con fotografía publicitaria.</p>
+                                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-4 h-max">
+                                                        <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i className="fa-solid fa-robot"></i></div>
+                                                        <h3 className="font-bold text-lg text-white">Marketing Inteligente IA</h3>
+                                                        <p className="text-xs text-slate-400 mt-1">Escribe tu idea comercial y selecciona a qué redes deseas enviarla para que ChatGPT genere tu posteo con fotografía publicitaria.</p>
                                                         
-                                                        <textarea placeholder="Ej: Hoy 10% de descuento en auditorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
+                                                        <textarea placeholder="Ej: Hoy 10% de descuento en auditorías contables..." value={promoIdea} onChange={(e) => setPromoIdea(e.target.value)} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-xs focus:outline-none resize-none" rows="3"></textarea>
                                                         
-                                                        <div class="space-y-2 text-xs text-slate-300">
-                                                            <p class="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Redes de Destino:</p>
-                                                            <div class="flex flex-wrap gap-3">
-                                                                <label class="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                        <div className="space-y-2 text-xs text-slate-300">
+                                                            <p className="font-bold text-slate-400 uppercase tracking-wider text-[10px]">Redes de Destino:</p>
+                                                            <div className="flex flex-wrap gap-3">
+                                                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
                                                                     Facebook
                                                                 </label>
-                                                                <label class="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.instagram} onChange={(e) => setTargetNetworks({...targetNetworks, instagram: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.instagram} onChange={(e) => setTargetNetworks({...targetNetworks, instagram: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
                                                                     Instagram
                                                                 </label>
-                                                                <label class="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.whatsapp} onChange={(e) => setTargetNetworks({...targetNetworks, whatsapp: e.target.checked})} class="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                <label className="flex items-center gap-1.5 cursor-pointer">
+                                                                    <input type="checkbox" checked={targetNetworks.whatsapp} onChange={(e) => setTargetNetworks({...targetNetworks, whatsapp: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
                                                                     WhatsApp
                                                                 </label>
                                                             </div>
                                                         </div>
 
-                                                        <button onClick={() => runAiAdvertising(merchant)} class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
+                                                        <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
                                                     </div>
 
-                                                    <div class="lg:col-span-2 space-y-6">
-                                                        <div class="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6">
-                                                            <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3">Código QR & Enlace de Autogestión</h3>
-                                                            <div class="flex flex-col md:flex-row gap-6 items-center">
-                                                                <div class="bg-white p-4 rounded-2xl w-44 h-44 flex items-center justify-center shadow-xl">
-                                                                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(dynamicStoreLink)}`} alt="QR" class="w-36 h-36" />
+                                                    <div className="lg:col-span-2 space-y-6">
+                                                        <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 space-y-6">
+                                                            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Código QR & Enlace de Autogestión</h3>
+                                                            <div className="flex flex-col md:flex-row gap-6 items-center">
+                                                                <div className="bg-white p-4 rounded-2xl w-44 h-44 flex items-center justify-center shadow-xl">
+                                                                    <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getDynamicStoreLink(merchant.ID_Comercio))}`} alt="QR" className="w-36 h-36" />
                                                                 </div>
-                                                                <div class="space-y-4 flex-grow">
-                                                                    <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Enlace del Menú Digital Público</span>
-                                                                    <div class="flex gap-2">
-                                                                        <input type="text" value={dynamicStoreLink} readOnly class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none" />
-                                                                        <button onClick={() => { navigator.clipboard.writeText(dynamicStoreLink); showToast("📋 Enlace copiado"); }} class="bg-slate-850 hover:bg-slate-800 text-slate-300 px-3 rounded-xl border border-slate-805"><i class="fa-solid fa-copy"></i></button>
+                                                                <div className="space-y-4 flex-grow">
+                                                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Enlace del Menú Digital Público</span>
+                                                                    <div className="flex gap-2">
+                                                                        <input type="text" value={getDynamicStoreLink(merchant.ID_Comercio)} readOnly className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none" />
+                                                                        <button onClick={() => { navigator.clipboard.writeText(getDynamicStoreLink(merchant.ID_Comercio)); showToast("📋 Enlace copiado"); }} className="bg-slate-850 hover:bg-slate-800 text-slate-300 px-3 rounded-xl border border-slate-805"><i className="fa-solid fa-copy"></i></button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1116,67 +1168,68 @@
                             </div>
                         )}
 
-                        {}
+                        {/* --- STREAMING_CHUNK: Rendering the Public storefront view... --- */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
                                     const merchant = merchants.find(m => m.ID_Comercio === currentShopId);
-                                    if (!merchant) return <p class="text-center text-slate-500">Comercio deshabilitado.</p>;
+                                    if (!merchant) return <p className="text-center text-slate-500">Comercio deshabilitado.</p>;
                                     return (
-                                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                            <div class="lg:col-span-2 space-y-6">
-                                                <div class="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
-                                                    <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} class="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
-                                                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
-                                                    <div class="relative z-20 space-y-2">
-                                                        <span class="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
-                                                        <h2 class="text-3xl font-black text-white">{merchant.Nombre}</h2>
-                                                        <p class="text-xs text-slate-300">📞 {merchant.Telefono}</p>
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                            <div className="lg:col-span-2 space-y-6">
+                                                <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
+                                                    <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} className="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
+                                                    <div className="relative z-20 space-y-2">
+                                                        <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
+                                                        <h2 className="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                        <p className="text-xs text-slate-300">📞 {merchant.Telefono}</p>
                                                     </div>
                                                 </div>
 
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                        <p class="text-slate-500 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
+                                                        <p className="text-slate-500 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
                                                     ) : (
                                                         products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
-                                                            <div key={p.ID_Producto} class="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
-                                                                <div class="space-y-2">
-                                                                    <div class="flex justify-between items-start">
-                                                                        <span class="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800">{p.Imagen}</span>
-                                                                        <span class="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
+                                                            <div key={p.ID_Producto} className="bg-slate-900/95 border border-slate-800/80 p-5 rounded-2xl hover:border-slate-700/80 transition flex flex-col justify-between">
+                                                                <div className="space-y-2">
+                                                                    <div className="flex justify-between items-start">
+                                                                        <span className="text-3xl bg-slate-950 p-2 rounded-xl border border-slate-800">{p.Imagen}</span>
+                                                                        <span className="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
                                                                     </div>
-                                                                    <h3 class="font-bold text-white text-base pt-2">{p.Nombre_Producto}</h3>
-                                                                    <p class="text-xs text-slate-400 line-clamp-3">{p.Descripcion}</p>
+                                                                    <h3 className="font-bold text-white text-base pt-2">{p.Nombre_Producto}</h3>
+                                                                    <p className="text-xs text-slate-400 line-clamp-3">{p.Descripcion}</p>
                                                                 </div>
-                                                                <button onClick={() => addToCart(p)} class="w-full mt-4 bg-slate-950 text-slate-300 hover:bg-amber-500 hover:text-slate-950 py-2 rounded-xl text-xs font-bold border border-slate-800 transition">Agregar al Pedido</button>
+                                                                <button onClick={() => addToCart(p)} className="w-full mt-4 bg-slate-950 text-slate-300 hover:bg-amber-500 hover:text-slate-950 py-2 rounded-xl text-xs font-bold border border-slate-800 transition">Agregar al Pedido</button>
                                                             </div>
                                                         ))
                                                     )}
                                                 </div>
                                             </div>
 
-                                            <div class="space-y-6">
-                                                <div class="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
-                                                    <h3 class="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
+                                            {/* Shopping Cart checkout pane */}
+                                            <div className="space-y-6">
+                                                <div className="bg-slate-900/95 p-6 rounded-2xl border border-slate-800 space-y-4 sticky top-24 shadow-2xl">
+                                                    <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex justify-between items-center">
                                                         <span>Resumen de Compra</span>
-                                                        <span class="text-xs text-slate-400">({Object.values(cart).reduce((sum, i) => sum + i.qty, 0)} items)</span>
+                                                        <span className="text-xs text-slate-400">({Object.values(cart).reduce((sum, i) => sum + i.qty, 0)} items)</span>
                                                     </h3>
 
                                                     {Object.keys(cart).length === 0 ? (
-                                                        <p class="text-xs italic text-slate-500 text-center py-6">Carrito vacío.</p>
+                                                        <p className="text-xs italic text-slate-500 text-center py-6">Carrito vacío.</p>
                                                     ) : (
-                                                        <div class="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
+                                                        <div className="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
                                                             {Object.values(cart).map(item => (
-                                                                <div key={item.ID_Producto} class="py-2.5 flex justify-between items-center text-xs">
+                                                                <div key={item.ID_Producto} className="py-2.5 flex justify-between items-center text-xs">
                                                                     <div>
-                                                                        <p class="font-bold text-slate-200">{item.Nombre_Producto}</p>
-                                                                        <p class="text-slate-500 text-[10px]">${item.Precio} x {item.qty}</p>
+                                                                        <p className="font-bold text-slate-200">{item.Nombre_Producto}</p>
+                                                                        <p className="text-slate-500 text-[10px]">${item.Precio} x {item.qty}</p>
                                                                     </div>
-                                                                    <div class="flex items-center gap-2">
-                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} class="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i class="fa-solid fa-minus"></i></button>
-                                                                        <span class="font-bold text-slate-200">{item.qty}</span>
-                                                                        <button onClick={() => addToCart(item)} class="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i class="fa-solid fa-plus"></i></button>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} className="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-minus"></i></button>
+                                                                        <span className="font-bold text-slate-200">{item.qty}</span>
+                                                                        <button onClick={() => addToCart(item)} className="text-slate-550 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-plus"></i></button>
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -1184,39 +1237,39 @@
                                                     )}
 
                                                     {Object.keys(cart).length > 0 && (
-                                                        <div class="space-y-4 pt-3 border-t border-slate-800 text-xs">
+                                                        <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
                                                             <div>
-                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Dirección de Envío *</label>
-                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} class="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs" required />
+                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Dirección de Envío *</label>
+                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className="w-full bg-slate-950 border border-slate-850 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs" required />
                                                             </div>
                                                             <div>
-                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Propina Repartidor</label>
-                                                                <div class="grid grid-cols-4 gap-1">
+                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Propina Repartidor</label>
+                                                                <div className="grid grid-cols-4 gap-1">
                                                                     {[0, 5, 10, 15].map(p => (
-                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} class={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
+                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
                                                                     ))}
                                                                 </div>
                                                             </div>
                                                             <div>
-                                                                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1">Forma de Pago</label>
-                                                                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} class="w-full bg-slate-950 border border-slate-855 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs">
+                                                                <label className="block text-[10px] uppercase font-bold text-slate-400 mb-1">Forma de Pago</label>
+                                                                <select value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)} className="w-full bg-slate-950 border border-slate-855 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 text-xs cursor-pointer">
                                                                     <option value="Efectivo">Efectivo</option>
                                                                     <option value="Tarjeta de Débito/Crédito">Tarjeta de Débito/Crédito</option>
                                                                     <option value="Transferencia SPEI">Transferencia SPEI</option>
                                                                 </select>
                                                                 {paymentMethod === "Efectivo" && (
-                                                                    <input type="number" placeholder="¿Con cuánto vas a pagar?" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} class="w-full mt-2 bg-slate-950 border border-slate-850 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none" required />
+                                                                    <input type="number" placeholder="¿Con cuánto vas a pagar?" value={cashAmount} onChange={(e) => setCashAmount(e.target.value)} className="w-full mt-2 bg-slate-950 border border-slate-850 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none" required />
                                                                 )}
                                                             </div>
 
-                                                            <div class="bg-slate-950 p-4 rounded-xl border border-slate-850 space-y-2 font-mono text-[11px] text-slate-400">
-                                                                <div class="flex justify-between"><span>Subtotal:</span><span>${cartTotal.toFixed(2)}</span></div>
-                                                                <div class="flex justify-between"><span>Envío:</span><span>${deliveryFee.toFixed(2)}</span></div>
-                                                                <div class="flex justify-between"><span>Propina:</span><span>${currentTipVal.toFixed(2)}</span></div>
-                                                                <div class="flex justify-between border-t border-slate-855 pt-2 font-bold text-white text-xs"><span>Total:</span><span class="text-amber-500">${finalTotal.toFixed(2)} MXN</span></div>
+                                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-850 space-y-2 font-mono text-[11px] text-slate-400">
+                                                                <div className="flex justify-between"><span>Subtotal:</span><span>${cartTotal.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between"><span>Envío:</span><span>${deliveryFee.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between"><span>Propina:</span><span>${currentTipVal.toFixed(2)}</span></div>
+                                                                <div className="flex justify-between border-t border-slate-855 pt-2 font-bold text-white text-xs"><span>Total:</span><span className="text-amber-500">${finalTotal.toFixed(2)} MXN</span></div>
                                                             </div>
 
-                                                            <button type="button" onClick={() => handlePlaceOrder(merchant)} class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Confirmar Pedido Digital</button>
+                                                            <button type="button" onClick={() => handlePlaceOrder(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Confirmar Pedido Digital</button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1227,26 +1280,87 @@
                             </div>
                         )}
 
+                        {/* --- STREAMING_CHUNK: Modals for alerting client checkout... --- */}
                         {orderConfirmedModal && lastPlacedOrder && (
-                            <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
-                                <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
-                                    <div class="bg-slate-950/40 p-6 text-center border-b border-slate-850">
-                                        <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i class="fa-solid fa-circle-check"></i></div>
-                                        <h3 class="text-xl font-black text-white">¡Pedido Enviado!</h3>
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                                <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+                                    <div className="bg-slate-950/40 p-6 text-center border-b border-slate-850">
+                                        <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i className="fa-solid fa-circle-check"></i></div>
+                                        <h3 className="text-xl font-black text-white">¡Pedido Enviado!</h3>
                                     </div>
-                                    <div class="p-6 space-y-4 text-xs font-mono">
-                                        <div class="flex justify-between"><span>ID Orden:</span><span class="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
-                                        <div class="flex justify-between"><span>Total:</span><span class="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
+                                    <div className="p-6 space-y-4 text-xs font-mono">
+                                        <div className="flex justify-between"><span>ID Orden:</span><span className="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
+                                        <div className="flex justify-between"><span>Total:</span><span className="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
                                     </div>
-                                    <div class="p-6 bg-slate-950/40 border-t border-slate-850">
-                                        <button onClick={() => setOrderConfirmedModal(false)} class="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Aceptar</button>
+                                    <div className="p-6 bg-slate-950/40 border-t border-slate-850">
+                                        <button onClick={() => setOrderConfirmedModal(false)} className="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Aceptar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* UI Custom Dialog (Alert Modals overriding window.alert) */}
+                        {customAlert.show && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
+                                <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 text-lg">
+                                            <i className="fa-solid fa-circle-info"></i>
+                                        </div>
+                                        <h3 className="font-black text-base text-white">{customAlert.title}</h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-slate-300 text-sm leading-relaxed">{customAlert.message}</p>
+                                    </div>
+                                    <div className="p-6 bg-slate-950/40 border-t border-slate-800 text-right">
+                                        <button 
+                                            onClick={() => setCustomAlert({ show: false, title: '', message: '' })}
+                                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
+                                        >
+                                            Entendido
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* UI Custom Confirm (Modals overriding window.confirm) */}
+                        {customConfirm.show && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm animate-fadeIn">
+                                <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 text-lg">
+                                            <i className="fa-solid fa-triangle-exclamation"></i>
+                                        </div>
+                                        <h3 className="font-black text-base text-white">{customConfirm.title}</h3>
+                                    </div>
+                                    <div className="p-6">
+                                        <p className="text-slate-300 text-sm leading-relaxed">{customConfirm.message}</p>
+                                    </div>
+                                    <div className="p-6 bg-slate-950/40 border-t border-slate-800 flex justify-end gap-3 text-right">
+                                        <button 
+                                            onClick={() => setCustomConfirm({ show: false, title: '', message: '', onConfirm: null })}
+                                            className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-5 py-2 rounded-xl text-xs transition"
+                                        >
+                                            Cancelar
+                                        </button>
+                                        <button 
+                                            onClick={() => {
+                                                if (customConfirm.onConfirm) customConfirm.onConfirm();
+                                                setCustomConfirm({ show: false, title: '', message: '', onConfirm: null });
+                                            }}
+                                            className="bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
+                                        >
+                                            Confirmar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
-                    <footer class="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 relative z-10">
+                    {/* Master Footer */}
+                    <footer className="bg-slate-950 border-t border-slate-900 py-6 text-center text-xs text-slate-500 relative z-10">
                         <p>© 2026 ZeloxCloud Local Hub. Una solución de automatización inteligente de Grupo DFC.</p>
                     </footer>
                 </div>
