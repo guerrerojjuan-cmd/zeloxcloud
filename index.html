@@ -84,6 +84,14 @@
             70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
+        /* Scooter driving animation */
+        .scooter-anim {
+            animation: drive 1.5s infinite ease-in-out;
+        }
+        @keyframes drive {
+            0%, 100% { transform: translateX(-3px) translateY(0); }
+            50% { transform: translateX(3px) translateY(-2px); }
+        }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen relative overflow-x-hidden">
@@ -92,7 +100,7 @@
     <div id="root" class="relative z-10"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
         const NTFY_TOPIC = "zeloxcloud_sync_realtime_v12";
@@ -122,12 +130,12 @@
         ];
 
         const isEmoji = (str) => {
-            if (!str) return false;
+            if (typeof str !== 'string' || !str) return false;
             return !str.startsWith('http') && !str.startsWith('blob:') && !str.startsWith('data:');
         };
 
         const transformDriveUrl = (url) => {
-            if (!url) return '';
+            if (typeof url !== 'string' || !url) return '';
             const driveRegex = /\/file\/d\/([a-zA-Z0-9_-]+)/;
             const match = url.match(driveRegex);
             if (match && match[1]) {
@@ -164,6 +172,7 @@
             }
         };
 
+        // --- STREAMING_CHUNK: Dynamic brand logo module... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
@@ -185,6 +194,7 @@
             );
         }
 
+        // --- STREAMING_CHUNK: React Application State & Initialization... ---
         function ZeloxCloudApp() {
             const [merchants, setMerchants] = useState(() => {
                 const stored = localStorage.getItem("zc_merchants_production_v12");
@@ -202,8 +212,31 @@
                 return localStorage.getItem("zc_webhook_url_production") || "";
             });
 
+            // Theme preferences
             const [theme, setTheme] = useState(() => {
                 return localStorage.getItem("zc_theme_preference") || "dark";
+            });
+
+            // Mandatory consumer profile (ZeloxCloud global client ID style Uber / Didi)
+            const [consumerProfile, setConsumerProfile] = useState(() => {
+                const stored = localStorage.getItem("zc_consumer_profile_v12");
+                return stored ? JSON.parse(stored) : null;
+            });
+
+            // Active tracking order for consumer profile
+            const [activeOrder, setActiveOrder] = useState(() => {
+                const stored = localStorage.getItem("zc_active_order_v12");
+                return stored ? JSON.parse(stored) : null;
+            });
+
+            // Temporary states for registration form
+            const [onboardingForm, setOnboardingForm] = useState({
+                nombre: '',
+                telefono: '',
+                calle: '',
+                numero: '',
+                colonia: '',
+                municipio: ''
             });
 
             const [view, setView] = useState('login');
@@ -237,7 +270,6 @@
             const [uploadedProductPhoto, setUploadedProductPhoto] = useState(null);
 
             const [cart, setCart] = useState({});
-            const [deliveryAddress, setDeliveryAddress] = useState('');
             const [tipPercent, setTipPercent] = useState(10);
             const [customTip, setCustomTip] = useState('');
             const [paymentMethod, setPaymentMethod] = useState('Efectivo');
@@ -247,6 +279,9 @@
 
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
+
+            // Ref tracking for active order inside SSE to prevent stale closures
+            const activeOrderIdRef = useRef(activeOrder?.ID_Orden);
 
             useEffect(() => {
                 localStorage.setItem("zc_merchants_production_v12", JSON.stringify(merchants));
@@ -260,6 +295,13 @@
             useEffect(() => {
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
             }, [webhookUrl]);
+            useEffect(() => {
+                localStorage.setItem("zc_consumer_profile_v12", consumerProfile ? JSON.stringify(consumerProfile) : '');
+            }, [consumerProfile]);
+            useEffect(() => {
+                localStorage.setItem("zc_active_order_v12", activeOrder ? JSON.stringify(activeOrder) : '');
+                activeOrderIdRef.current = activeOrder?.ID_Orden;
+            }, [activeOrder]);
 
             useEffect(() => {
                 const body = document.body;
@@ -271,6 +313,7 @@
                 localStorage.setItem("zc_theme_preference", theme);
             }, [theme]);
 
+            // --- STREAMING_CHUNK: Setup Server-Sent Events (SSE) for Real-Time synchronization... ---
             useEffect(() => {
                 const eventSource = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
                 
@@ -278,24 +321,46 @@
                     try {
                         const ntfyData = JSON.parse(event.data);
                         if (ntfyData.message) {
-                            const parsedOrder = JSON.parse(ntfyData.message);
-                            if (parsedOrder && parsedOrder.ID_Orden) {
-                                setOrders(prev => {
-                                    if (prev.some(o => o.ID_Orden === parsedOrder.ID_Orden)) return prev;
+                            const payload = JSON.parse(ntfyData.message);
+                            
+                            // Scenario 1: Real-time order status update for Consumer tracking
+                            if (payload && payload.event === "order_status_updated") {
+                                setOrders(prev => prev.map(o => o.ID_Orden === payload.ID_Orden ? { ...o, Estado: payload.Estado } : o));
+                                
+                                if (activeOrderIdRef.current === payload.ID_Orden) {
+                                    setActiveOrder(prev => {
+                                        if (prev && prev.ID_Orden === payload.ID_Orden) {
+                                            return { ...prev, Estado: payload.Estado };
+                                        }
+                                        return prev;
+                                    });
                                     playChime();
-                                    showToast(`🔔 ¡Nuevo pedido recibido en vivo! ID: ${parsedOrder.ID_Orden}`);
-                                    return [parsedOrder, ...prev];
+                                    if (payload.Estado === "En Ruta") {
+                                        showToast("🚴 ¡Tu pedido ya está en camino!");
+                                    } else if (payload.Estado === "Entregado") {
+                                        showToast("✅ ¡Tu pedido ha sido entregado! ¡Disfrútalo!");
+                                    }
+                                }
+                            } 
+                            // Scenario 2: New order arriving live
+                            else if (payload && payload.ID_Orden) {
+                                setOrders(prev => {
+                                    if (prev.some(o => o.ID_Orden === payload.ID_Orden)) return prev;
+                                    playChime();
+                                    showToast(`🔔 ¡Nuevo pedido recibido en vivo! ID: ${payload.ID_Orden}`);
+                                    return [payload, ...prev];
                                 });
                             }
                         }
                     } catch (e) {
-                        // Keep-alive or non-JSON messages
+                        // Keep-alive silence
                     }
                 };
 
                 return () => eventSource.close();
             }, []);
 
+            // URL shop router checks
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const shopParam = params.get('shop');
@@ -304,7 +369,6 @@
                     if (exists) {
                         setCurrentShopId(shopParam);
                         setView('shop');
-                        showToast(`🏪 Tienda Abierta: ${shopParam}`);
                     }
                 }
             }, [merchants]);
@@ -381,6 +445,7 @@
                 }
             };
 
+            // Login execution
             const handleLogin = (e) => {
                 e.preventDefault();
                 setLoginError('');
@@ -520,14 +585,43 @@
                 showToast("🗑️ Producto eliminado");
             };
 
-            const advanceOrderState = (orderId) => {
-                setOrders(orders.map(o => {
+            // --- STREAMING_CHUNK: Status update broadcast over ntfy and webhook... ---
+            const advanceOrderState = async (orderId) => {
+                let nextState = "Nuevo";
+                const updatedOrders = orders.map(o => {
                     if (o.ID_Orden === orderId) {
-                        return { ...o, Estado: o.Estado === "Nuevo" ? "En Ruta" : "Entregado" };
+                        nextState = o.Estado === "Nuevo" ? "En Ruta" : "Entregado";
+                        return { ...o, Estado: nextState };
                     }
                     return o;
-                }));
-                showToast("📦 Estado de pedido actualizado");
+                });
+                setOrders(updatedOrders);
+
+                // Broadcast live over ntfy channel
+                try {
+                    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            event: "order_status_updated",
+                            ID_Orden: orderId,
+                            Estado: nextState
+                        })
+                    });
+                } catch (e) {
+                    console.error("Failed to broadcast order status", e);
+                }
+
+                // Push to webhook
+                const syncLog = {
+                    event: "order_status_updated",
+                    ID_Orden: orderId,
+                    Estado: nextState,
+                    timestamp: new Date().toISOString()
+                };
+                setWebhookLog(prev => [JSON.stringify(syncLog, null, 2), ...prev]);
+                triggerWebhook(syncLog);
+                
+                showToast(`📦 Pedido ${orderId} actualizado a: ${nextState}`);
             };
 
             const addToCart = (prod) => {
@@ -552,6 +646,7 @@
             const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
             const finalTotal = cartTotal + deliveryFee + currentTipVal;
 
+            // --- STREAMING_CHUNK: Handle Placement of persistent Uber/Didi styled order... ---
             const handlePlaceOrder = async (merchant) => {
                 if (merchant.Estado_Tienda === "Cerrado") {
                     setCustomAlert({
@@ -561,11 +656,11 @@
                     });
                     return;
                 }
-                if (!deliveryAddress.trim()) {
+                if (!consumerProfile) {
                     setCustomAlert({
                         show: true,
-                        title: 'Dirección Requerida',
-                        message: 'Por favor, introduce una dirección válida para poder entregar tu pedido.'
+                        title: 'Registro Requerido',
+                        message: 'Deberás registrar tus datos de entrega antes de proceder a ordenar.'
                     });
                     return;
                 }
@@ -581,11 +676,14 @@
                     }
                 }
 
+                const fullAddressString = `${consumerProfile.calle} #${consumerProfile.numero}, Col. ${consumerProfile.colonia}, ${consumerProfile.municipio}`;
+
                 const orderObj = {
                     ID_Orden: "ORD-" + Math.floor(1000 + Math.random() * 9000),
                     ID_Comercio: merchant.ID_Comercio,
-                    Cliente: "Cliente Digital DFC",
-                    Direccion: deliveryAddress,
+                    Cliente: consumerProfile.nombre,
+                    Direccion: fullAddressString,
+                    Telefono: consumerProfile.telefono,
                     Detalle_Productos: Object.values(cart).map(i => `${i.qty}x ${i.Nombre_Producto}`).join(", "),
                     Total: Math.round(finalTotal),
                     Metodo_Pago: paymentMethod,
@@ -615,6 +713,7 @@
                     ID_Orden: orderObj.ID_Orden,
                     Cliente: orderObj.Cliente,
                     Direccion: orderObj.Direccion,
+                    Telefono: orderObj.Telefono,
                     Detalle_Productos: orderObj.Detalle_Productos,
                     Total: orderObj.Total,
                     Metodo_Pago: orderObj.Metodo_Pago,
@@ -626,10 +725,44 @@
                 triggerWebhook(makePayload);
 
                 setLastPlacedOrder(orderObj);
+                setActiveOrder(orderObj); // Store active tracking order for the customer
                 setOrderConfirmedModal(true);
                 setCart({});
-                setDeliveryAddress('');
                 setCashAmount('');
+            };
+
+            // Handle Consumer onboarding form submit
+            const handleConsumerOnboarding = (e) => {
+                e.preventDefault();
+                const { nombre, telefono, calle, numero, colonia, municipio } = onboardingForm;
+                if (!nombre.trim() || !telefono.trim() || !calle.trim() || !numero.trim() || !colonia.trim() || !municipio.trim()) {
+                    setCustomAlert({
+                        show: true,
+                        title: 'Campos Obligatorios',
+                        message: 'Por favor, llena todos los campos de dirección y teléfono para continuar. Esto nos permite asegurar tu entrega de forma rápida y eficaz.'
+                    });
+                    return;
+                }
+                if (telefono.trim().length < 10) {
+                    setCustomAlert({
+                        show: true,
+                        title: 'Teléfono Inválido',
+                        message: 'Por favor, introduce un número de teléfono de 10 dígitos.'
+                    });
+                    return;
+                }
+                
+                const profileObj = {
+                    nombre: nombre.trim(),
+                    telefono: telefono.trim(),
+                    calle: calle.trim(),
+                    numero: numero.trim(),
+                    colonia: colonia.trim(),
+                    municipio: municipio.trim()
+                };
+
+                setConsumerProfile(profileObj);
+                showToast("🎉 ¡Registro completado con éxito! Ahora puedes comprar.");
             };
 
             const runAiAdvertising = (merchant) => {
@@ -672,6 +805,7 @@
                 return matchMerchant && matchPayment;
             });
 
+            // Financial stats calculations
             const getFinancialStats = (merchantOrders) => {
                 const now = new Date();
                 const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -741,20 +875,21 @@
                 };
             };
 
+            // Dynamic color token settings
             const sBgHeader = theme === 'dark' ? 'bg-slate-950/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm';
             const sBgCard = theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 shadow-md text-slate-800';
             const sBgInput = theme === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-100 border-slate-300 text-slate-900';
             const sTextPri = theme === 'dark' ? 'text-slate-100' : 'text-slate-900';
             const sTextSec = theme === 'dark' ? 'text-slate-400' : 'text-slate-600';
             const sBorder = theme === 'dark' ? 'border-slate-800' : 'border-slate-200';
-            const sTableHead = theme === 'dark' ? 'bg-slate-905/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
+            const sTableHead = theme === 'dark' ? 'bg-slate-950/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
             const sTableContainer = theme === 'dark' ? 'bg-slate-900/50 text-slate-300' : 'bg-white text-slate-800 border border-slate-200';
-            const sOptionBg = theme === 'dark' ? 'bg-slate-950 text-slate-200' : 'bg-white text-slate-800';
+            const sOptionBg = theme === 'dark' ? 'bg-slate-955 text-slate-200' : 'bg-white text-slate-800';
 
             return (
                 <div className={`flex flex-col min-h-screen justify-between relative ${theme === 'light' ? 'text-slate-900' : 'text-slate-100'}`}>
                     {notificationToast && (
-                        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200 animate-bounce">
+                        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-955 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200 animate-bounce">
                             <i className="fa-solid fa-bell"></i>
                             <span>{notificationToast}</span>
                         </div>
@@ -784,7 +919,7 @@
                             
                             <button 
                                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                                className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-950 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
+                                className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-955 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
                                 title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
                             >
                                 <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base`}></i>
@@ -890,12 +1025,13 @@
                                     <p><i className="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
                                     <p><i className="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
                                 </div>
-                                <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-850 text-slate-200 px-6 py-2.5 rounded-xl font-bold border border-slate-800 hover:bg-slate-800">
+                                <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold border border-slate-700 hover:bg-slate-700">
                                     Cerrar Ventana
                                 </button>
                             </div>
                         )}
 
+                        {/* VIEW: SUPER ADMIN */}
                         {view === 'super_admin' && (
                             <div>
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -985,7 +1121,7 @@
                                                                     <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
                                                                         {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Suspender" : "Activar"}
                                                                     </button>
-                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className={`bg-slate-800/80 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border ${sBorder}`}>
+                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className={`bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border ${sBorder}`}>
                                                                         <i className="fa-solid fa-trash"></i>
                                                                     </button>
                                                                 </div>
@@ -1083,6 +1219,7 @@
                                                         <tr className={`bg-slate-900/10 ${sTextSec} text-xs uppercase tracking-wider font-bold border-b ${sBorder}`}>
                                                             <th className="p-4">ID / Comercio</th>
                                                             <th className="p-4">Cliente / Dirección</th>
+                                                            <th className="p-4">Contacto</th>
                                                             <th className="p-4">Detalle de Compra</th>
                                                             <th className="p-4">Método de Pago</th>
                                                             <th className="p-4 text-right">Total</th>
@@ -1090,7 +1227,7 @@
                                                     </thead>
                                                     <tbody className={`divide-y ${sBorder} text-sm`}>
                                                         {filteredOrders.length === 0 ? (
-                                                            <tr><td colSpan="5" className="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
+                                                            <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay órdenes procesadas bajo estos filtros.</td></tr>
                                                         ) : (
                                                             filteredOrders.map(o => {
                                                                 const name = merchants.find(m => m.ID_Comercio === o.ID_Comercio)?.Nombre || "Desconocido";
@@ -1098,6 +1235,7 @@
                                                                     <tr key={o.ID_Orden} className="hover:bg-amber-500/5 transition">
                                                                         <td className="p-4 font-mono"><span className="text-amber-500 font-bold block">{o.ID_Orden}</span><span className={`text-[10px] ${sTextSec} uppercase`}>{name}</span></td>
                                                                         <td className="p-4"><div className={`font-bold ${sTextPri}`}>{o.Cliente}</div><div className={`text-xs ${sTextSec}`}>{o.Direccion}</div></td>
+                                                                        <td className="p-4 text-xs font-mono">{o.Telefono || 'Sin registro'}</td>
                                                                         <td className={`p-4 ${sTextPri} font-mono text-xs max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                         <td className="p-4"><div className="text-xs font-semibold">{o.Metodo_Pago}</div></td>
                                                                         <td className="p-4 text-right font-black text-amber-500 text-base">${o.Total} MXN</td>
@@ -1127,7 +1265,7 @@
                                                         onChange={(e) => setWebhookUrl(e.target.value)} 
                                                         className={`${sBgInput} border rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500`}
                                                     />
-                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-500 hover:bg-amber-600 text-slate-950 px-4 py-2 rounded-xl text-xs font-bold transition">
+                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-500 hover:bg-amber-600 text-slate-955 px-4 py-2 rounded-xl text-xs font-bold transition">
                                                         Guardar
                                                     </button>
                                                 </div>
@@ -1136,7 +1274,7 @@
                                         </div>
 
                                         <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
-                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
+                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-100 border-slate-200' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
                                                 <span className="font-bold">Tabla: Configuracion_Comercios (Doble clic / Edición Libre en Vivo)</span>
                                                 <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
                                             </div>
@@ -1194,7 +1332,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Estatus', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Estatus', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-905 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-955 border-slate-800 text-slate-200'}`}
                                                                     >
                                                                         <option value="Al corriente" className={sOptionBg}>Al corriente</option>
                                                                         <option value="Suspendido" className={sOptionBg}>Suspendido</option>
@@ -1216,7 +1354,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Estado_Tienda', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Estado_Tienda', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-955 border-slate-800 text-slate-200'}`}
                                                                     >
                                                                         <option value="Abierto" className={sOptionBg}>Abierto</option>
                                                                         <option value="Cerrado" className={sOptionBg}>Cerrado</option>
@@ -1229,7 +1367,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Categoria', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Categoria', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans w-full ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans w-full ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-955 border-slate-800 text-slate-200'}`}
                                                                     >
                                                                         <option value="Servicios" className={sOptionBg}>Servicios</option>
                                                                         <option value="Restaurante" className={sOptionBg}>Restaurante</option>
@@ -1265,7 +1403,7 @@
 
                                         <div className={`${sBgCard} p-6 rounded-2xl border`}>
                                             <h4 className={`font-bold text-sm ${sTextPri} mb-3 flex items-center gap-2`}>Historial de Salida JSON (Webhook live-stream)</h4>
-                                            <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800 text-emerald-400">
+                                            <div className="bg-slate-955 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800 text-emerald-400">
                                                 {webhookLog.length === 0 ? (
                                                     <span className="text-slate-500 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
                                                 ) : (
@@ -1280,7 +1418,7 @@
 
                         {/* Create merchant dialog modal */}
                         {showNewMerchantModal && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
                                         <h3 className="font-black text-lg text-white">Registrar Nuevo Comercio</h3>
@@ -1290,11 +1428,11 @@
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre del Comercio *</label>
-                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
-                                                <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
+                                                <select value={newMerchant.Categoria} onChange={(e) => setNewMerchant({...newMerchant, Categoria: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500">
                                                     <option value="Servicios" className={sOptionBg}>Servicios</option>
                                                     <option value="Restaurante" className={sOptionBg}>Restaurante</option>
                                                     <option value="Tecnología" className={sOptionBg}>Tecnología</option>
@@ -1303,13 +1441,13 @@
                                             </div>
                                         </div>
                                         
-                                        <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                                        <div className="p-3 bg-slate-955/60 rounded-xl border border-slate-800 space-y-2">
                                             <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">Cargar Foto del Comercio (Galería/Cámara)</label>
                                             <input 
                                                 type="file" 
                                                 accept="image/*" 
                                                 onChange={handleMerchantRegisterPhoto}
-                                                className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                                className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-955 hover:file:bg-amber-600 file:cursor-pointer" 
                                             />
                                             {newMerchant.FotoUrl && (
                                                 <div className="relative mt-2 w-20 h-20 rounded-lg overflow-hidden border border-amber-500/20">
@@ -1321,42 +1459,42 @@
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre de Contacto *</label>
-                                                <input type="text" placeholder="Nombre" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <input type="text" placeholder="Nombre" value={newMerchant.Contacto} onChange={(e) => setNewMerchant({...newMerchant, Contacto: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Teléfono Principal *</label>
-                                                <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Horario de Atención</label>
-                                                <input type="text" placeholder="Lunes a Sábado 9am - 8pm" value={newMerchant.Horario} onChange={(e) => setNewMerchant({...newMerchant, Horario: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" />
+                                                <input type="text" placeholder="Lunes a Sábado 9am - 8pm" value={newMerchant.Horario} onChange={(e) => setNewMerchant({...newMerchant, Horario: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Estatus Operativo Inicial</label>
-                                                <select value={newMerchant.Estado_Tienda} onChange={(e) => setNewMerchant({...newMerchant, Estado_Tienda: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none">
+                                                <select value={newMerchant.Estado_Tienda} onChange={(e) => setNewMerchant({...newMerchant, Estado_Tienda: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none">
                                                     <option value="Abierto" className={sOptionBg}>Abierto</option>
                                                     <option value="Cerrado" className={sOptionBg}>Cerrado</option>
                                                 </select>
                                             </div>
                                         </div>
-                                        <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                                        <div className="p-3 bg-slate-955/60 rounded-xl border border-slate-800 space-y-3">
                                             <p className="text-xs font-bold text-amber-500 uppercase tracking-widest">Credenciales de Acceso (Comercio)</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="block text-[10px] uppercase text-slate-400 mb-1">Email de Usuario *</label>
-                                                    <input type="email" placeholder="usuario@zeloxcloud.com" value={newMerchant.Usuario} onChange={(e) => setNewMerchant({...newMerchant, Usuario: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                    <input type="email" placeholder="usuario@zeloxcloud.com" value={newMerchant.Usuario} onChange={(e) => setNewMerchant({...newMerchant, Usuario: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[10px] uppercase text-slate-400 mb-1">Contraseña *</label>
-                                                    <input type="text" placeholder="Contraseña" value={newMerchant.Contrasena} onChange={(e) => setNewMerchant({...newMerchant, Contrasena: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
+                                                    <input type="text" placeholder="Contraseña" value={newMerchant.Contrasena} onChange={(e) => setNewMerchant({...newMerchant, Contrasena: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-1.5 text-slate-200 text-xs focus:outline-none focus:border-amber-500" required />
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="pt-4 flex gap-3">
-                                            <button type="button" onClick={() => setShowNewMerchantModal(false)} className="w-1/2 bg-slate-850 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
-                                            <button type="submit" className="w-1/2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar Comercio</button>
+                                            <button type="button" onClick={() => setShowNewMerchantModal(false)} className="w-1/2 bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
+                                            <button type="submit" className="w-1/2 bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 py-3 rounded-xl font-black">Registrar Comercio</button>
                                         </div>
                                     </form>
                                 </div>
@@ -1381,7 +1519,7 @@
                                                             className="w-full h-full object-cover" 
                                                             onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
                                                         />
-                                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold text-center">
+                                                        <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold text-center cursor-pointer">
                                                             <i className="fa-solid fa-camera text-xl mb-1"></i>
                                                             Cambiar Foto
                                                             <input 
@@ -1400,16 +1538,16 @@
                                                         <p className={`text-sm ${sTextSec} mt-1`}>SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
                                                     </div>
                                                 </div>
-                                                <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
+                                                <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-705' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
                                                     <div>Estatus: <span className="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
                                                     <div className="flex items-center gap-2">
                                                         <span>Operatividad:</span>
-                                                        <span className={`px-2 py-0.5 rounded font-bold ${merchant.Estado_Tienda === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                        <span className={`px-2 py-0.5 rounded font-bold ${merchant.Estado_Tienda === 'Cerrado' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                                                             {merchant.Estado_Tienda || 'Abierto'}
                                                         </span>
                                                     </div>
                                                     <div>WhatsApp ID: <span className="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
-                                                    <button onClick={() => playChime()} className="text-[10px] bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-slate-950 border border-amber-500/20 px-2 py-0.5 rounded font-bold transition flex items-center gap-1.5 mt-1">
+                                                    <button onClick={() => playChime()} className="text-[10px] bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-slate-955 border border-amber-500/20 px-2 py-0.5 rounded font-bold transition flex items-center gap-1.5 mt-1">
                                                         <i className="fa-solid fa-volume-high"></i> Desbloquear Alertas
                                                     </button>
                                                 </div>
@@ -1428,7 +1566,6 @@
                                                 </button>
                                             </div>
 
-                                            {/* --- STREAMING_CHUNK: Processing orders tab for merchants... --- */}
                                             {activeMerchantTab === 'pedidos' && (
                                                 <div className="space-y-6">
                                                     {(() => {
@@ -1464,23 +1601,25 @@
                                                                     <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-700' : 'bg-slate-950 text-slate-400'}`}>
                                                                         <th className="p-4">ID de Pedido</th>
                                                                         <th className="p-4">Cliente / Dirección</th>
+                                                                        <th className="p-4">Contacto Celular</th>
                                                                         <th className="p-4">Productos</th>
                                                                         <th className="p-4">Método de Pago</th>
                                                                         <th className="p-4">Total</th>
                                                                         <th className="p-4 text-center">Control de Despacho</th>
                                                                     </tr>
                                                                 </thead>
-                                                                <tbody className="divide-y divide-slate-800 text-sm">
+                                                                <tbody className={`divide-y ${sBorder} text-sm`}>
                                                                     {merchantOrders.length === 0 ? (
-                                                                        <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
+                                                                        <tr><td colSpan="7" className="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
                                                                     ) : (
                                                                         merchantOrders.map(o => (
-                                                                            <tr key={o.ID_Orden} className={`hover:bg-slate-850/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
+                                                                            <tr key={o.ID_Orden} className={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
                                                                                 <td className="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
                                                                                 <td className="p-4">
                                                                                     <div className={`font-bold ${sTextPri}`}>{o.Cliente}</div>
                                                                                     <div className={`text-xs ${sTextSec} flex items-center gap-1.5 mt-1`}><i className="fa-solid fa-location-dot"></i>{o.Direccion}</div>
                                                                                 </td>
+                                                                                <td className="p-4 font-mono">{o.Telefono || 'Sin registro'}</td>
                                                                                 <td className={`p-4 ${sTextPri} font-medium max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                                 <td className="p-4 text-xs font-semibold">
                                                                                     <span className={`px-2 py-1 rounded border ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>{o.Metodo_Pago}</span>
@@ -1493,7 +1632,7 @@
                                                                                             <i className="fa-solid fa-circle-check"></i> Entregado
                                                                                         </span>
                                                                                     ) : (
-                                                                                        <button onClick={() => advanceOrderState(o.ID_Orden)} className={`px-4 py-2 rounded-lg text-xs font-black transition w-max mx-auto flex items-center gap-2 ${o.Estado === "Nuevo" ? 'bg-amber-500 text-slate-950 shadow-lg hover:bg-amber-600' : 'bg-blue-600 text-white shadow-lg hover:bg-blue-500'}`}>
+                                                                                        <button onClick={() => advanceOrderState(o.ID_Orden)} className={`px-4 py-2 rounded-lg text-xs font-black transition w-max mx-auto flex items-center gap-2 ${o.Estado === "Nuevo" ? 'bg-amber-500 text-slate-955 shadow-lg hover:bg-amber-600' : 'bg-blue-600 text-white shadow-lg hover:bg-blue-500'}`}>
                                                                                             {o.Estado === "Nuevo" ? "Despachar / En Ruta" : "Confirmar Entrega"}
                                                                                         </button>
                                                                                     )}
@@ -1508,7 +1647,6 @@
                                                 </div>
                                             )}
 
-                                            {/* --- STREAMING_CHUNK: Processing catalog updates... --- */}
                                             {activeMerchantTab === 'catalogo' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     <div className={`${sBgCard} p-6 rounded-2xl border h-max space-y-4`}>
@@ -1555,7 +1693,7 @@
                                                                     id="file-upload-prod"
                                                                     accept="image/*" 
                                                                     onChange={handleProductPhotoChange}
-                                                                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                                                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-955 hover:file:bg-amber-600 file:cursor-pointer" 
                                                                 />
                                                                 {uploadedProductPhoto && (
                                                                     <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-amber-500/20">
@@ -1573,7 +1711,7 @@
 
                                                             <div>
                                                                 <label className={`block text-xs font-semibold ${sTextSec} uppercase tracking-wider mb-1.5`}>Descripción</label>
-                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 resize-none`}></textarea>
+                                                                <textarea placeholder="Características..." value={newProduct.Descripcion} onChange={(e) => setNewProduct({...newProduct, Descripcion: e.target.value})} rows="3" className={`w-full ${sBgInput} border rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-amber-500 resize-none`}></textarea>
                                                             </div>
                                                             <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Registrar en Catálogo</button>
                                                         </form>
@@ -1598,7 +1736,7 @@
                                                                                     <span className="text-xs text-amber-500 font-extrabold block mt-2">${p.Precio} MXN</span>
                                                                                 </div>
                                                                             </div>
-                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} className="text-slate-400 hover:text-red-400 p-1"><i className="fa-solid fa-trash-can"></i></button>
+                                                                            <button onClick={() => deleteProduct(p.ID_Producto)} className="text-slate-450 hover:text-red-400 p-1"><i className="fa-solid fa-trash-can"></i></button>
                                                                         </div>
                                                                     ))
                                                                 )}
@@ -1608,7 +1746,6 @@
                                                 </div>
                                             )}
 
-                                            {/* --- STREAMING_CHUNK: Processing merchant configuration settings... --- */}
                                             {activeMerchantTab === 'config' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     
@@ -1677,7 +1814,7 @@
                                                             </div>
                                                         </div>
 
-                                                        <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
+                                                        <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
                                                     </div>
 
                                                     <div className="space-y-6">
@@ -1705,22 +1842,184 @@
                             </div>
                         )}
 
-                        {/* VIEW: CONSUMER STOREFRONT */}
+                        {/* --- STREAMING_CHUNK: Consumer Storefront & Real-Time Tracking Logic... --- */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
                                     const merchant = merchants.find(m => m.ID_Comercio === currentShopId);
                                     if (!merchant) return <p className="text-center text-slate-500">Comercio deshabilitado.</p>;
+                                    
+                                    // If consumer has not registered yet, display Didi/Uber styled onboarding
+                                    if (!consumerProfile) {
+                                        return (
+                                            <div className={`${sBgCard} max-w-lg mx-auto my-6 p-8 rounded-2xl border gold-glow relative`}>
+                                                <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
+                                                <div className="text-center mb-6">
+                                                    <div className="w-16 h-16 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+                                                        <i className="fa-solid fa-user-plus"></i>
+                                                    </div>
+                                                    <h3 className={`text-xl font-black ${sTextPri}`}>Registro Único de Cliente</h3>
+                                                    <p className={`text-xs ${sTextSec} mt-1`}>
+                                                        Ingresa tus datos una sola vez para comprar en todos los comercios afiliados al Hub de ZeloxCloud (DFC, Tacos, Salsas, Abarrotes).
+                                                    </p>
+                                                </div>
+
+                                                <form onSubmit={handleConsumerOnboarding} className="space-y-4 text-sm">
+                                                    <div>
+                                                        <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Nombre Completo *</label>
+                                                        <input 
+                                                            type="text" required placeholder="ej. Carlos Sánchez"
+                                                            value={onboardingForm.nombre}
+                                                            onChange={(e) => setOnboardingForm({...onboardingForm, nombre: e.target.value})}
+                                                            className={`w-full ${sBgInput} border rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs`}
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Teléfono Celular (10 dígitos) *</label>
+                                                        <input 
+                                                            type="tel" required placeholder="ej. 8117650620" maxLength="10"
+                                                            value={onboardingForm.telefono}
+                                                            onChange={(e) => setOnboardingForm({...onboardingForm, telefono: e.target.value})}
+                                                            className={`w-full ${sBgInput} border rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs`}
+                                                        />
+                                                    </div>
+
+                                                    <div className="p-4 bg-amber-500/5 rounded-xl border border-amber-500/20 space-y-3">
+                                                        <p className="text-[10px] font-bold text-amber-500 uppercase tracking-wider"><i className="fa-solid fa-map-location-dot mr-1"></i> Dirección de Entrega Estructurada</p>
+                                                        
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label className={`block text-[9px] uppercase ${sTextSec} mb-0.5`}>Calle *</label>
+                                                                <input 
+                                                                    type="text" required placeholder="Constitución"
+                                                                    value={onboardingForm.calle}
+                                                                    onChange={(e) => setOnboardingForm({...onboardingForm, calle: e.target.value})}
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-1.5 text-xs focus:outline-none`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className={`block text-[9px] uppercase ${sTextSec} mb-0.5`}>Número (Ext/Int) *</label>
+                                                                <input 
+                                                                    type="text" required placeholder="120-B"
+                                                                    value={onboardingForm.numero}
+                                                                    onChange={(e) => setOnboardingForm({...onboardingForm, numero: e.target.value})}
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-1.5 text-xs focus:outline-none`}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label className={`block text-[9px] uppercase ${sTextSec} mb-0.5`}>Colonia *</label>
+                                                                <input 
+                                                                    type="text" required placeholder="Centro"
+                                                                    value={onboardingForm.colonia}
+                                                                    onChange={(e) => setOnboardingForm({...onboardingForm, colonia: e.target.value})}
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-1.5 text-xs focus:outline-none`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className={`block text-[9px] uppercase ${sTextSec} mb-0.5`}>Municipio *</label>
+                                                                <input 
+                                                                    type="text" required placeholder="Monterrey"
+                                                                    value={onboardingForm.municipio}
+                                                                    onChange={(e) => setOnboardingForm({...onboardingForm, municipio: e.target.value})}
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-1.5 text-xs focus:outline-none`}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 font-black py-3 rounded-xl shadow-lg transition mt-4">
+                                                        Comenzar a Comprar
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        );
+                                    }
+
                                     return (
-                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
                                             <div className="lg:col-span-2 space-y-6">
+                                                
+                                                {/* --- STREAMING_CHUNK: REAL-TIME ORDER TRACKING SYSTEM FOR CONSUMERS (Uber/Didi Style) --- */}
+                                                {activeOrder && activeOrder.ID_Comercio === merchant.ID_Comercio && (
+                                                    <div className={`${sBgCard} p-6 rounded-2xl border-2 border-amber-500/40 gold-glow relative overflow-hidden transition-all duration-300`}>
+                                                        <div className="absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r from-amber-500 to-yellow-600"></div>
+                                                        <div className="flex justify-between items-start mb-4">
+                                                            <div>
+                                                                <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 font-black px-2.5 py-1 rounded">RADARES DE ENTREGA DFC</span>
+                                                                <h3 className={`text-base font-black ${sTextPri} mt-1.5`}>Seguimiento en Vivo: {activeOrder.ID_Orden}</h3>
+                                                            </div>
+                                                            {activeOrder.Estado === "Entregado" && (
+                                                                <button 
+                                                                    onClick={() => setActiveOrder(null)} 
+                                                                    className="text-xs bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition"
+                                                                >
+                                                                    <i className="fa-solid fa-circle-check"></i> Cerrar Radar
+                                                                </button>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Stepper progress tracker */}
+                                                        <div className="relative py-4">
+                                                            <div className="absolute left-6 right-6 top-1/2 -translate-y-1/2 h-1 bg-slate-800 z-0">
+                                                                <div 
+                                                                    className="h-full bg-gradient-to-r from-amber-500 to-yellow-600 transition-all duration-500"
+                                                                    style={{ 
+                                                                        width: activeOrder.Estado === "Nuevo" ? '0%' : activeOrder.Estado === "En Ruta" ? '50%' : '100%' 
+                                                                    }}
+                                                                ></div>
+                                                            </div>
+                                                            <div className="relative z-10 flex justify-between">
+                                                                {/* Step 1: Preparando */}
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all ${activeOrder.Estado === 'Nuevo' ? 'bg-amber-500 border-amber-400 text-slate-950 scale-110 gold-glow' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
+                                                                        <i className={`fa-solid ${activeOrder.Estado === 'Nuevo' ? 'fa-fire-burner animate-pulse' : 'fa-receipt'} text-base`}></i>
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold mt-2 text-center max-w-[80px]">Preparando</span>
+                                                                </div>
+
+                                                                {/* Step 2: En ruta */}
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all ${activeOrder.Estado === 'En Ruta' ? 'bg-amber-500 border-amber-400 text-slate-950 scale-110 gold-glow' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
+                                                                        <i className={`fa-solid fa-motorcycle text-base ${activeOrder.Estado === 'En Ruta' ? 'scooter-anim' : ''}`}></i>
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold mt-2 text-center max-w-[80px]">En Camino</span>
+                                                                </div>
+
+                                                                {/* Step 3: Entregado */}
+                                                                <div className="flex flex-col items-center">
+                                                                    <div className={`w-11 h-11 rounded-full flex items-center justify-center border-2 transition-all ${activeOrder.Estado === 'Entregado' ? 'bg-emerald-500 border-emerald-400 text-white scale-110 shadow-lg shadow-emerald-500/20' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
+                                                                        <i className="fa-solid fa-house-chimney-check text-base"></i>
+                                                                    </div>
+                                                                    <span className="text-[10px] font-bold mt-2 text-center max-w-[80px]">Entregado</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Interactive Status message box */}
+                                                        <div className="mt-4 p-3 rounded-xl bg-slate-950/45 border border-slate-800 text-xs flex items-center gap-3">
+                                                            <div className="text-xl">
+                                                                {activeOrder.Estado === "Nuevo" ? "🍳" : activeOrder.Estado === "En Ruta" ? "🚴" : "🎁"}
+                                                            </div>
+                                                            <div>
+                                                                <p className={`font-black ${sTextPri}`}>
+                                                                    {activeOrder.Estado === "Nuevo" ? "El comercio está preparando tus productos" : activeOrder.Estado === "En Ruta" ? "¡Tu repartidor ya va en camino!" : "¡Buen provecho! Tu pedido fue entregado"}
+                                                                </p>
+                                                                <p className={`text-[10px] ${sTextSec} mt-0.5`}>Actualizado en tiempo real por el Hub</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
                                                     <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} className="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
                                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10"></div>
                                                     <div className="relative z-20 space-y-2 w-full flex flex-wrap items-end justify-between gap-3">
                                                         <div className="space-y-1.5">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
+                                                                <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-955 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
                                                                 <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center gap-1 shadow-lg ${merchant.Estado_Tienda === 'Cerrado' ? 'bg-red-600 text-white pulse-red' : 'bg-emerald-600 text-white pulse-green'}`}>
                                                                     <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
                                                                     {merchant.Estado_Tienda === 'Cerrado' ? 'Cerrado' : 'Abierto'}
@@ -1786,9 +2085,9 @@
                                                                         <p className={`${sTextSec} text-[10px]`}>${item.Precio} x {item.qty}</p>
                                                                     </div>
                                                                     <div className="flex items-center gap-2">
-                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} className="text-slate-400 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-minus"></i></button>
+                                                                        <button onClick={() => removeFromCart(item.ID_Producto)} className="text-slate-400 bg-slate-955 border border-slate-800 rounded p-1"><i className="fa-solid fa-minus"></i></button>
                                                                         <span className={`font-bold ${sTextPri}`}>{item.qty}</span>
-                                                                        <button onClick={() => addToCart(item)} className="text-slate-400 bg-slate-950 border border-slate-800 rounded p-1"><i className="fa-solid fa-plus"></i></button>
+                                                                        <button onClick={() => addToCart(item)} className="text-slate-400 bg-slate-955 border border-slate-800 rounded p-1"><i className="fa-solid fa-plus"></i></button>
                                                                     </div>
                                                                 </div>
                                                             ))}
@@ -1797,15 +2096,47 @@
 
                                                     {Object.keys(cart).length > 0 && (
                                                         <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
-                                                            <div>
-                                                                <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Dirección de Envío *</label>
-                                                                <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-xs`} required />
+                                                            
+                                                            {/* Intelligent consumer profile card (Uber/Didi style) */}
+                                                            <div className={`p-4 rounded-xl border ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-slate-955 border-slate-800'}`}>
+                                                                <div className="flex justify-between items-center mb-2 border-b border-slate-800/40 pb-1.5">
+                                                                    <span className="text-[9px] uppercase font-bold text-amber-500 tracking-wider flex items-center gap-1">
+                                                                        <i className="fa-solid fa-circle-check"></i> Dirección Guardada
+                                                                    </span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => {
+                                                                            setOnboardingForm({
+                                                                                nombre: consumerProfile.nombre,
+                                                                                telefono: consumerProfile.telefono,
+                                                                                calle: consumerProfile.calle,
+                                                                                numero: consumerProfile.numero,
+                                                                                colonia: consumerProfile.colonia,
+                                                                                municipio: consumerProfile.municipio
+                                                                            });
+                                                                            setConsumerProfile(null);
+                                                                        }}
+                                                                        className="text-[9px] text-amber-500 font-bold hover:underline"
+                                                                    >
+                                                                        <i className="fa-solid fa-pen-to-square"></i> Editar
+                                                                    </button>
+                                                                </div>
+                                                                <p className={`font-bold text-xs ${sTextPri}`}>{consumerProfile.nombre}</p>
+                                                                <p className={`text-[11px] ${sTextSec} mt-1 leading-relaxed`}>
+                                                                    <i className="fa-solid fa-map-pin text-amber-500 mr-1.5"></i>
+                                                                    {consumerProfile.calle} #{consumerProfile.numero}, Col. {consumerProfile.colonia}, {consumerProfile.municipio}
+                                                                </p>
+                                                                <p className={`text-[11px] ${sTextSec} mt-1`}>
+                                                                    <i className="fa-solid fa-mobile-screen-button text-amber-500 mr-1.5"></i>
+                                                                    {consumerProfile.telefono}
+                                                                </p>
                                                             </div>
+
                                                             <div>
                                                                 <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Propina Repartidor</label>
                                                                 <div className="grid grid-cols-4 gap-1">
                                                                     {[0, 5, 10, 15].map(p => (
-                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
+                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-800'}`}>{p}%</button>
                                                                     ))}
                                                                 </div>
                                                             </div>
@@ -1848,17 +2179,19 @@
 
                         {/* Modals */}
                         {orderConfirmedModal && lastPlacedOrder && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
-                                    <div className="bg-slate-950/40 p-6 text-center border-b border-slate-850">
+                                    <div className="bg-slate-955/40 p-6 text-center border-b border-slate-800">
                                         <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i className="fa-solid fa-circle-check"></i></div>
                                         <h3 className="text-xl font-black text-white">¡Pedido Enviado!</h3>
                                     </div>
                                     <div className="p-6 space-y-4 text-xs font-mono text-slate-300">
                                         <div className="flex justify-between"><span>ID Orden:</span><span className="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
                                         <div className="flex justify-between"><span>Total:</span><span className="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
+                                        <div className="flex justify-between"><span>Cliente:</span><span className="text-slate-200">{lastPlacedOrder.Cliente}</span></div>
+                                        <div className="flex justify-between"><span>Teléfono:</span><span className="text-slate-200">{lastPlacedOrder.Telefono}</span></div>
                                     </div>
-                                    <div className="p-6 bg-slate-900/40 border-t border-slate-850">
+                                    <div className="p-6 bg-slate-900/40 border-t border-slate-800">
                                         <button onClick={() => setOrderConfirmedModal(false)} className="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Aceptar</button>
                                     </div>
                                 </div>
@@ -1867,7 +2200,7 @@
 
                         {/* UI Custom Dialog (Alert Modals) */}
                         {customAlert.show && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-905/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 text-lg">
@@ -1881,7 +2214,7 @@
                                     <div className="p-6 bg-slate-900/40 border-t border-slate-800 text-right">
                                         <button 
                                             onClick={() => setCustomAlert({ show: false, title: '', message: '' })}
-                                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
+                                            className="bg-amber-500 hover:bg-amber-600 text-slate-955 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
                                         >
                                             Entendido
                                         </button>
@@ -1892,7 +2225,7 @@
 
                         {/* UI Custom Confirm */}
                         {customConfirm.show && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 text-lg">
