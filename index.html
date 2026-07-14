@@ -66,29 +66,46 @@
         button, select, input, textarea {
             min-height: 44px;
         }
+        .pulse-green {
+            box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-green-anim 2s infinite;
+        }
+        .pulse-red {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            animation: pulse-red-anim 2s infinite;
+        }
+        @keyframes pulse-green-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        @keyframes pulse-red-anim {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
     </style>
 </head>
 <body class="text-slate-100 min-h-screen relative overflow-x-hidden">
 
     <div class="bg-app-overlay"></div>
-
     <div id="root" class="relative z-10"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
         const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
+        const NTFY_TOPIC = "zeloxcloud_sync_realtime_v12";
 
-        // --- STREAMING_CHUNK: Initializing 1:1 backup database aligned with version v11... ---
         const defaultMerchants = [
-            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "juan.guerrero64zeloxcloud.com", Contrasena: "Dfc2016", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620", Idea_Publicidad: "¡Asegura tu declaración mensual sin errores con nuestro equipo experto!" },
-            { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620", Idea_Publicidad: "Prueba gratis Copiloto por 7 días y automatiza tu contabilidad." },
-            { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620", Idea_Publicidad: "Digitaliza tu negocio local con menús inteligentes en minutos." },
-            { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000", Idea_Publicidad: "Lunes de habanero: compra 2 salsas premium y recibe envío gratis." },
-            { ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre: "Tacos y Gorditas Doña Blanca", Usuario: "tacos_y_gorditas_dona_blanca1@zeloxcloud.com", Contrasena: "T4c0sYg01", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TGB-202", Facebook_Page_ID: "donablanca", Instagram: "@tacos_donablanca", FotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Blanca", Telefono: "8110000001", Idea_Publicidad: "¡Hoy orden de tacos de guisado en harina a precio especial!" },
-            { ID_Comercio: "tacos-don-lupe", Nombre: "Tacos Don Lupe", Usuario: "tacos_don_lupe1@zeloxcloud.com", Contrasena: "T4c0sD0n1", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TDL-303", Facebook_Page_ID: "tacosdonlupe", Instagram: "@tacos_donlupe", FotoUrl: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lupe", Telefono: "8110000002", Idea_Publicidad: "Trompo al pastor al 2x1 los miércoles familiares." },
-            { ID_Comercio: "abarrotes-lara", Nombre: "Abarrotes Lara", Usuario: "abarrotes_lara1@zeloxcloud.com", Contrasena: "Ug8Uq9G2", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABL-404", Facebook_Page_ID: "abarroteslara", Instagram: "@abarrotes_lara", FotoUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lara", Telefono: "8110000003", Idea_Publicidad: "Huevo blanco fresco y abarrotes generales con entrega inmediata." },
-            { ID_Comercio: "abarrotes-guerrero", Nombre: "Abarrotes Guerrero", Usuario: "abarrotes_guerrero1@zeloxcloud.com", Contrasena: "Na4Na0H3", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABG-505", Facebook_Page_ID: "abarrotesguerrero", Instagram: "@abarrotes_guerrero", FotoUrl: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Guerrero", Telefono: "8110000004", Idea_Publicidad: "Frutas y verduras frescas cosechadas del día para tu hogar." }
+            { ID_Comercio: "dfc-cloud", Nombre: "DFC Cloud", Usuario: "juan.guerrero64zeloxcloud.com", Contrasena: "Dfc2016", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-DFC-990", Facebook_Page_ID: "dfccloud", Instagram: "@dfc.cloud", FotoUrl: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=600&q=80", Contacto: "Juan Guerrero", Telefono: "8117650620", Horario: "Lunes a Viernes 9:00 AM - 6:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "dfc-copiloto", Nombre: "DFC Copiloto", Usuario: "dfc_copiloto1@zeloxcloud.com", Contrasena: "DfCc0Pil1", Estatus: "Al corriente", Categoria: "Tecnología", WhatsApp_Group_ID: "WH-COP-104", Facebook_Page_ID: "dfccopiloto", Instagram: "@dfc_copiloto", FotoUrl: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Copiloto", Telefono: "8117650620", Horario: "Lunes a Viernes 9:00 AM - 7:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "dfc-zeloxcloud", Nombre: "DFC Zeloxcloud", Usuario: "dfc_zeloxcloud1@zeloxcloud.com", Contrasena: "DfCz3lDx1", Estatus: "Al corriente", Categoria: "Servicios", WhatsApp_Group_ID: "WH-ZEL-882", Facebook_Page_ID: "zeloxcloud", Instagram: "@dfc.zeloxcloud", FotoUrl: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Zeloxcloud", Telefono: "8117650620", Horario: "Lunes a Sábado 9:00 AM - 8:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "salsas-la-carajita", Nombre: "Salsas La Carajita", Usuario: "salsas_la_carajita1@zeloxcloud.com", Contrasena: "S4ls4sL41", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-SLC-101", Facebook_Page_ID: "lacarajita", Instagram: "@salsaslacarajita", FotoUrl: "https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?auto=format&fit=crop&w=600&q=80", Contacto: "Propietario Carajita", Telefono: "8110000000", Horario: "Lunes a Domingo 10:00 AM - 9:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "tacos-y-gorditas-dona-blanca", Nombre: "Tacos y Gorditas Doña Blanca", Usuario: "tacos_y_gorditas_dona_blanca1@zeloxcloud.com", Contrasena: "T4c0sYg01", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TGB-202", Facebook_Page_ID: "donablanca", Instagram: "@tacos_donablanca", FotoUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Blanca", Telefono: "8110000001", Horario: "Martes a Domingo 7:00 AM - 4:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "tacos-don-lupe", Nombre: "Tacos Don Lupe", Usuario: "tacos_don_lupe1@zeloxcloud.com", Contrasena: "T4c0sD0n1", Estatus: "Al corriente", Categoria: "Restaurante", WhatsApp_Group_ID: "WH-TDL-303", Facebook_Page_ID: "tacosdonlupe", Instagram: "@tacos_donlupe", FotoUrl: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lupe", Telefono: "8110000002", Horario: "Lunes a Sábado 4:00 PM - 12:00 AM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "abarrotes-lara", Nombre: "Abarrotes Lara", Usuario: "abarrotes_lara1@zeloxcloud.com", Contrasena: "Ug8Uq9G2", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABL-404", Facebook_Page_ID: "abarroteslara", Instagram: "@abarrotes_lara", FotoUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Lara", Telefono: "8110000003", Horario: "Lunes a Domingo 7:00 AM - 10:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" },
+            { ID_Comercio: "abarrotes-guerrero", Nombre: "Abarrotes Guerrero", Usuario: "abarrotes_guerrero1@zeloxcloud.com", Contrasena: "Na4Na0H3", Estatus: "Al corriente", Categoria: "Tienda local", WhatsApp_Group_ID: "WH-ABG-505", Facebook_Page_ID: "abarrotesguerrero", Instagram: "@abarrotes_guerrero", FotoUrl: "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=600&q=80", Contacto: "Soporte Guerrero", Telefono: "8110000004", Horario: "Lunes a Sábado 8:00 AM - 9:00 PM", Estado_Tienda: "Abierto", Idea_Publicidad: "" }
         ];
 
         const defaultProducts = [
@@ -143,16 +160,15 @@
                 osc1.start();
                 osc1.stop(ctx.currentTime + 0.3);
             } catch (e) {
-                console.log("Audio context initiated.");
+                console.log("AudioContext waiting user gesture.");
             }
         };
 
-        // --- STREAMING_CHUNK: Defining Brand Logo with fail-safe SVG rendering... ---
         function BrandLogo({ className = "w-11 h-11" }) {
             const [hasError, setHasError] = useState(false);
             if (hasError) {
                 return (
-                    <div className={`${className} bg-slate-900 border border-amber-500/30 rounded-xl flex items-center justify-center p-1.5 shadow-lg relative`}>
+                    <div className={`${className} bg-slate-900 border border-amber-500/30 rounded-xl flex items-center justify-center p-1.5 shadow-lg`}>
                         <svg viewBox="0 0 100 100" className="w-full h-full text-amber-500" fill="currentColor">
                             <path d="M50 15 C38 15 32 25 38 35 C28 38 28 52 38 55 C42 55 72 55 75 51 C82 48 80 35 70 35 C68 25 58 15 50 15 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
                         </svg>
@@ -164,24 +180,22 @@
                     src="ZELOX_CLOUD.jpeg" 
                     alt="Logo" 
                     className={`${className} rounded-xl object-cover border border-amber-500/30`}
-                    onError={() => setHasError(true)}
+                    onError={(e) => { e.currentTarget.onerror = null; setHasError(true); }}
                 />
             );
         }
 
-        // --- STREAMING_CHUNK: Initializing State Variables for App and Webhook Loggers... ---
         function ZeloxCloudApp() {
-            // Version v11 cache to flush obsolete structures
             const [merchants, setMerchants] = useState(() => {
-                const stored = localStorage.getItem("zc_merchants_production_v11");
+                const stored = localStorage.getItem("zc_merchants_production_v12");
                 return stored ? JSON.parse(stored) : defaultMerchants;
             });
             const [products, setProducts] = useState(() => {
-                const stored = localStorage.getItem("zc_products_production_v11");
+                const stored = localStorage.getItem("zc_products_production_v12");
                 return stored ? JSON.parse(stored) : defaultProducts;
             });
             const [orders, setOrders] = useState(() => {
-                const stored = localStorage.getItem("zc_orders_production_v11");
+                const stored = localStorage.getItem("zc_orders_production_v12");
                 return stored ? JSON.parse(stored) : [];
             });
             const [webhookUrl, setWebhookUrl] = useState(() => {
@@ -192,14 +206,12 @@
                 return localStorage.getItem("zc_theme_preference") || "dark";
             });
 
-            // Navigation Routing
             const [view, setView] = useState('login');
             const [loggedUser, setLoggedUser] = useState(null);
             const [currentShopId, setCurrentShopId] = useState('dfc-cloud');
             const [activeMerchantTab, setActiveMerchantTab] = useState('pedidos');
             const [activeAdminTab, setActiveAdminTab] = useState('comercios');
 
-            // Inputs
             const [loginEmail, setLoginEmail] = useState('');
             const [loginPass, setLoginPass] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -208,26 +220,22 @@
             const [promoIdea, setPromoIdea] = useState('');
             const [targetNetworks, setTargetNetworks] = useState({ facebook: true, instagram: true, whatsapp: true });
 
-            // Customized Modal Framework
             const [customAlert, setCustomAlert] = useState({ show: false, title: '', message: '' });
             const [customConfirm, setCustomConfirm] = useState({ show: false, title: '', message: '', onConfirm: null });
 
-            // Dynamic Filters
             const [filterMerchant, setFilterMerchant] = useState('todos');
             const [filterPayment, setFilterPayment] = useState('todos');
 
-            // Add Entity Modals
             const [showNewMerchantModal, setShowNewMerchantModal] = useState(false);
             const [newMerchant, setNewMerchant] = useState({
                 Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
                 WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
-                Usuario: '', Contrasena: '', FotoUrl: '', Idea_Publicidad: ''
+                Usuario: '', Contrasena: '', FotoUrl: '', Horario: 'Lunes a Sábado 9:00 AM - 8:00 PM', Estado_Tienda: 'Abierto', Idea_Publicidad: ''
             });
 
             const [newProduct, setNewProduct] = useState({ Nombre_Producto: '', Precio: '', Descripcion: '', Imagen: '💼' });
             const [uploadedProductPhoto, setUploadedProductPhoto] = useState(null);
 
-            // Checkout state
             const [cart, setCart] = useState({});
             const [deliveryAddress, setDeliveryAddress] = useState('');
             const [tipPercent, setTipPercent] = useState(10);
@@ -240,21 +248,19 @@
             const [webhookLog, setWebhookLog] = useState([]);
             const [notificationToast, setNotificationToast] = useState(null);
 
-            // --- STREAMING_CHUNK: Handling Persistent LocalStorage Synclog... ---
             useEffect(() => {
-                localStorage.setItem("zc_merchants_production_v11", JSON.stringify(merchants));
+                localStorage.setItem("zc_merchants_production_v12", JSON.stringify(merchants));
             }, [merchants]);
             useEffect(() => {
-                localStorage.setItem("zc_products_production_v11", JSON.stringify(products));
+                localStorage.setItem("zc_products_production_v12", JSON.stringify(products));
             }, [products]);
             useEffect(() => {
-                localStorage.setItem("zc_orders_production_v11", JSON.stringify(orders));
+                localStorage.setItem("zc_orders_production_v12", JSON.stringify(orders));
             }, [orders]);
             useEffect(() => {
                 localStorage.setItem("zc_webhook_url_production", webhookUrl);
             }, [webhookUrl]);
 
-            // Sync theme changes with body class for dynamic styling
             useEffect(() => {
                 const body = document.body;
                 if (theme === 'light') {
@@ -265,23 +271,31 @@
                 localStorage.setItem("zc_theme_preference", theme);
             }, [theme]);
 
-            // Sync multi-tabs
             useEffect(() => {
-                const handleStorageChange = (e) => {
-                    if (e.key === "zc_orders_production_v11") {
-                        const updated = JSON.parse(e.newValue);
-                        if (updated.length > orders.length) {
-                            playChime();
-                            showToast("🔔 ¡Se ha recibido un nuevo pedido en la red ZeloxCloud!");
+                const eventSource = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
+                
+                eventSource.onmessage = (event) => {
+                    try {
+                        const ntfyData = JSON.parse(event.data);
+                        if (ntfyData.message) {
+                            const parsedOrder = JSON.parse(ntfyData.message);
+                            if (parsedOrder && parsedOrder.ID_Orden) {
+                                setOrders(prev => {
+                                    if (prev.some(o => o.ID_Orden === parsedOrder.ID_Orden)) return prev;
+                                    playChime();
+                                    showToast(`🔔 ¡Nuevo pedido recibido en vivo! ID: ${parsedOrder.ID_Orden}`);
+                                    return [parsedOrder, ...prev];
+                                });
+                            }
                         }
-                        setOrders(updated);
+                    } catch (e) {
+                        // Keep-alive or non-JSON messages
                     }
                 };
-                window.addEventListener("storage", handleStorageChange);
-                return () => window.removeEventListener("storage", handleStorageChange);
-            }, [orders]);
 
-            // QR Routing Detection
+                return () => eventSource.close();
+            }, []);
+
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
                 const shopParam = params.get('shop');
@@ -295,7 +309,6 @@
                 }
             }, [merchants]);
 
-            // Sync merchant's promo idea input in real-time
             const handlePromoIdeaChange = (val, mId) => {
                 setPromoIdea(val);
                 setMerchants(prev => prev.map(m => m.ID_Comercio === mId ? { ...m, Idea_Publicidad: val } : m));
@@ -332,7 +345,6 @@
                 });
             };
 
-            // --- STREAMING_CHUNK: Managing Store Photo profile changes... ---
             const handleStorePhotoChange = async (e, merchantId) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -419,7 +431,7 @@
                 setNewMerchant({
                     Nombre: '', Contacto: '', Telefono: '', Categoria: 'Servicios',
                     WhatsApp_Group_ID: '', Facebook_Page_ID: '', Instagram: '',
-                    Usuario: '', Contrasena: '', FotoUrl: '', Idea_Publicidad: ''
+                    Usuario: '', Contrasena: '', FotoUrl: '', Horario: 'Lunes a Sábado 9:00 AM - 8:00 PM', Estado_Tienda: 'Abierto', Idea_Publicidad: ''
                 });
 
                 const syncLog = { event: "merchant_created", ID_Comercio: slug, Nombre: formatted.Nombre, timestamp: new Date().toISOString() };
@@ -466,7 +478,6 @@
                 });
             };
 
-            // --- STREAMING_CHUNK: Managing Product upload pipeline with Base64 converter... ---
             const handleProductPhotoChange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -541,7 +552,15 @@
             const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
             const finalTotal = cartTotal + deliveryFee + currentTipVal;
 
-            const handlePlaceOrder = (merchant) => {
+            const handlePlaceOrder = async (merchant) => {
+                if (merchant.Estado_Tienda === "Cerrado") {
+                    setCustomAlert({
+                        show: true,
+                        title: 'Comercio Cerrado',
+                        message: 'Este establecimiento se encuentra cerrado actualmente. No es posible procesar tu orden.'
+                    });
+                    return;
+                }
                 if (!deliveryAddress.trim()) {
                     setCustomAlert({
                         show: true,
@@ -576,6 +595,15 @@
                     Estado: "Nuevo",
                     Timestamp: new Date().toLocaleString()
                 };
+
+                try {
+                    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
+                        method: 'POST',
+                        body: JSON.stringify(orderObj)
+                    });
+                } catch (e) {
+                    console.error("Transmission over ntfy failed", e);
+                }
 
                 const updatedOrders = [orderObj, ...orders];
                 setOrders(updatedOrders);
@@ -644,25 +672,89 @@
                 return matchMerchant && matchPayment;
             });
 
-            const totalRevenue = filteredOrders.reduce((sum, o) => sum + o.Total, 0);
-            const avgTicket = filteredOrders.length > 0 ? (totalRevenue / filteredOrders.length) : 0;
-            const totalDelivery = filteredOrders.reduce((sum, o) => sum + o.Envio, 0);
+            const getFinancialStats = (merchantOrders) => {
+                const now = new Date();
+                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                const startOfWeek = now.getTime() - (7 * 24 * 60 * 60 * 1000);
+                const startOfMonth = now.getTime() - (30 * 24 * 60 * 60 * 1000);
+                
+                let totalHoy = 0, totalSemana = 0, totalMes = 0;
+                let countHoy = 0, countSemana = 0, countMes = 0;
+                
+                let pagoEfectivo = 0, pagoTarjeta = 0, pagoSPEI = 0;
+                let totalEfectivo = 0, totalTarjeta = 0, totalSPEI = 0;
 
-            // --- STREAMING_CHUNK: Dynamic Color tokens mapping for perfect dark/light mode visibility... ---
-            const sBgHeader = theme === 'dark' ? 'bg-slate-950/90 border-slate-800/80 text-white' : 'bg-white border-slate-200/80 text-slate-900 shadow-sm';
-            const sBgCard = theme === 'dark' ? 'bg-slate-900/90 border-slate-800/80 text-slate-100' : 'bg-white border-slate-200/90 shadow-md text-slate-800';
-            const sBgInput = theme === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-50 border-slate-200 text-slate-900';
+                merchantOrders.forEach(o => {
+                    let orderTime = Date.parse(o.Timestamp);
+                    if (isNaN(orderTime)) {
+                        const parts = o.Timestamp.split(/[\/\s,:]+/);
+                        if (parts.length >= 3) {
+                            const day = parseInt(parts[0], 10);
+                            const month = parseInt(parts[1], 10) - 1;
+                            const year = parseInt(parts[2], 10);
+                            const hour = parts[3] ? parseInt(parts[3], 10) : 0;
+                            const minute = parts[4] ? parseInt(parts[4], 10) : 0;
+                            const dateObj = new Date(year, month, day, hour, minute);
+                            orderTime = dateObj.getTime();
+                        } else {
+                            orderTime = now.getTime();
+                        }
+                    }
+
+                    const total = parseFloat(o.Total) || 0;
+
+                    if (orderTime >= startOfDay) {
+                        totalHoy += total;
+                        countHoy++;
+                    }
+                    if (orderTime >= startOfWeek) {
+                        totalSemana += total;
+                        countSemana++;
+                    }
+                    if (orderTime >= startOfMonth) {
+                        totalMes += total;
+                        countMes++;
+                    }
+
+                    const method = o.Metodo_Pago || "Efectivo";
+                    if (method.toLowerCase().includes("efectivo")) {
+                        pagoEfectivo++;
+                        totalEfectivo += total;
+                    } else if (method.toLowerCase().includes("tarjeta")) {
+                        pagoTarjeta++;
+                        totalTarjeta += total;
+                    } else {
+                        pagoSPEI++;
+                        totalSPEI += total;
+                    }
+                });
+
+                return {
+                    hoy: { total: totalHoy, count: countHoy },
+                    semana: { total: totalSemana, count: countSemana },
+                    mes: { total: totalMes, count: countMes },
+                    pago: {
+                        efectivo: { count: pagoEfectivo, total: totalEfectivo },
+                        tarjeta: { count: pagoTarjeta, total: totalTarjeta },
+                        spei: { count: pagoSPEI, total: totalSPEI }
+                    }
+                };
+            };
+
+            const sBgHeader = theme === 'dark' ? 'bg-slate-950/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm';
+            const sBgCard = theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 shadow-md text-slate-800';
+            const sBgInput = theme === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-100 border-slate-300 text-slate-900';
             const sTextPri = theme === 'dark' ? 'text-slate-100' : 'text-slate-900';
             const sTextSec = theme === 'dark' ? 'text-slate-400' : 'text-slate-600';
             const sBorder = theme === 'dark' ? 'border-slate-800' : 'border-slate-200';
-            const sTableHead = theme === 'dark' ? 'bg-slate-950/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
+            const sTableHead = theme === 'dark' ? 'bg-slate-905/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
             const sTableContainer = theme === 'dark' ? 'bg-slate-900/50 text-slate-300' : 'bg-white text-slate-800 border border-slate-200';
             const sOptionBg = theme === 'dark' ? 'bg-slate-950 text-slate-200' : 'bg-white text-slate-800';
 
             return (
                 <div className={`flex flex-col min-h-screen justify-between relative ${theme === 'light' ? 'text-slate-900' : 'text-slate-100'}`}>
                     {notificationToast && (
-                        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200">
+                        <div className="fixed top-5 right-5 z-50 bg-amber-500 text-slate-950 font-bold px-5 py-3 rounded-xl shadow-2xl flex items-center gap-3 border border-yellow-200 animate-bounce">
                             <i className="fa-solid fa-bell"></i>
                             <span>{notificationToast}</span>
                         </div>
@@ -687,10 +779,9 @@
                             </div>
                         </div>
 
-                        {/* Navigation Right (Theme + Stores dropdown) */}
+                        {/* Navigation Controls */}
                         <div className="flex flex-wrap items-center gap-3 md:gap-4">
                             
-                            {/* Theme Toggle Button */}
                             <button 
                                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                                 className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-950 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
@@ -711,8 +802,7 @@
                                 </div>
                             )}
 
-                            {/* Dropdown Menu replacing horizontal list of shops */}
-                            <div className={`flex items-center gap-1.5 p-1.5 rounded-xl border text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-900/90 border-slate-800 text-white'}`}>
+                            <div className={`flex items-center gap-1.5 p-1.5 rounded-xl border text-xs ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900/90 border-slate-800 text-white'}`}>
                                 <span className={`px-2 font-bold ${sTextSec}`}><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
                                     value={view === 'shop' ? currentShopId : ''}
@@ -727,7 +817,7 @@
                                             window.history.pushState({}, '', window.location.pathname);
                                         }
                                     }}
-                                    className={`border rounded-lg py-1.5 px-3 focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                    className={`border rounded-lg py-1.5 px-3 focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'}`}
                                 >
                                     <option value="" className={sOptionBg}>Seleccionar...</option>
                                     {merchants.map(m => (
@@ -777,7 +867,7 @@
                                             autoComplete="new-password" required
                                         />
                                     </div>
-                                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black py-3 px-4 rounded-xl shadow-lg transition mt-4">
+                                    <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 font-black py-3 px-4 rounded-xl shadow-lg transition mt-4">
                                         Iniciar Sesión
                                     </button>
                                 </form>
@@ -795,18 +885,17 @@
                                 <p className={`${sTextSec} mt-4 text-sm leading-relaxed`}>
                                     El acceso al panel y el menú digital para este comercio han sido desactivados debido a la falta de pago de la membresía.
                                 </p>
-                                <div className={`p-4 rounded-xl border my-6 text-left space-y-2 text-xs ${theme === 'light' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}>
+                                <div className={`p-4 rounded-xl border my-6 text-left space-y-2 text-xs ${theme === 'light' ? 'bg-slate-50 border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-white'}`}>
                                     <p className={`font-bold uppercase tracking-wider ${sTextSec}`}>Contacto de Reactivación DFC:</p>
                                     <p><i className="fa-solid fa-phone text-amber-500 mr-2"></i> 811 765 0620</p>
                                     <p><i className="fa-solid fa-envelope text-amber-500 mr-2"></i> juan.guerrero@zeloxcloud.com</p>
                                 </div>
-                                <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-800 text-slate-200 px-6 py-2.5 rounded-xl font-bold">
+                                <button onClick={() => setShowBlockedScreen(false)} className="bg-slate-850 text-slate-200 px-6 py-2.5 rounded-xl font-bold border border-slate-800 hover:bg-slate-800">
                                     Cerrar Ventana
                                 </button>
                             </div>
                         )}
 
-                        {/* VIEW: SUPER ADMIN */}
                         {view === 'super_admin' && (
                             <div>
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -817,7 +906,7 @@
                                         </div>
                                         <p className={`text-sm ${sTextSec} mt-1`}>Supervisión unilateral, alta de comercios reales, auditoría y análisis global de ventas</p>
                                     </div>
-                                    <button onClick={() => setShowNewMerchantModal(true)} className="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
+                                    <button onClick={() => setShowNewMerchantModal(true)} className="bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 font-black px-5 py-3 rounded-xl flex items-center gap-2 shadow-lg">
                                         <i className="fa-solid fa-plus-circle text-lg"></i> Registrar Comercio
                                     </button>
                                 </div>
@@ -860,7 +949,7 @@
                                                                         src={transformDriveUrl(m.FotoUrl)} 
                                                                         alt={m.Nombre} 
                                                                         className="w-full h-full object-cover" 
-                                                                        onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
+                                                                        onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
                                                                     />
                                                                     <label className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[9px] font-bold text-white text-center p-0.5">
                                                                         <i className="fa-solid fa-camera text-base"></i>
@@ -896,7 +985,7 @@
                                                                     <button onClick={() => toggleMerchantStatus(m.ID_Comercio, m.Estatus)} className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${m.Estatus === "Al corriente" || m.Estatus === "activo" ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500 hover:text-white' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500 hover:text-white'}`}>
                                                                         {m.Estatus === "Al corriente" || m.Estatus === "activo" ? "Suspender" : "Activar"}
                                                                     </button>
-                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className={`bg-slate-800/80 hover:bg-slate-750 text-slate-300 p-2 rounded-lg text-xs border ${sBorder}`}>
+                                                                    <button onClick={() => deleteMerchant(m.ID_Comercio)} className={`bg-slate-800/80 hover:bg-slate-700 text-slate-300 p-2 rounded-lg text-xs border ${sBorder}`}>
                                                                         <i className="fa-solid fa-trash"></i>
                                                                     </button>
                                                                 </div>
@@ -909,29 +998,61 @@
                                     </div>
                                 )}
 
-                                {/* ADMIN TAB: GLOBAL ORDERS */}
+                                {/* ADMIN TAB: GLOBAL ORDERS & FINANCIAL STATS */}
                                 {activeAdminTab === 'ordenes_globales' && (
                                     <div className="space-y-6">
-                                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
-                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Ventas Brutas Totales</p>
-                                                <h4 className="text-2xl font-black text-amber-500">${totalRevenue.toFixed(2)} MXN</h4>
-                                            </div>
-                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
-                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Ticket Promedio</p>
-                                                <h4 className="text-2xl font-black text-emerald-400">${avgTicket.toFixed(2)} MXN</h4>
-                                            </div>
-                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
-                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Comisión DFC</p>
-                                                <h4 className="text-2xl font-black text-blue-400">${totalDelivery.toFixed(2)} MXN</h4>
-                                            </div>
-                                            <div className={`${sBgCard} p-6 rounded-2xl border`}>
-                                                <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}>Total de Pedidos</p>
-                                                <h4 className="text-2xl font-black text-purple-400">{filteredOrders.length} Órdenes</h4>
-                                            </div>
-                                        </div>
+                                        {(() => {
+                                            const stats = getFinancialStats(filteredOrders);
+                                            return (
+                                                <div className="space-y-6">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                        <div className={`${sBgCard} p-6 rounded-2xl border relative overflow-hidden`}>
+                                                            <div className="absolute top-0 left-0 h-1 w-full bg-amber-500"></div>
+                                                            <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}><i className="fa-solid fa-calendar-day mr-2 text-amber-500"></i>Ingresos de Hoy</p>
+                                                            <h4 className={`text-2xl font-black ${sTextPri}`}>${stats.hoy.total.toFixed(2)} MXN</h4>
+                                                            <p className={`text-[10px] ${sTextSec} mt-1.5`}>{stats.hoy.count} transacciones completadas</p>
+                                                        </div>
+                                                        <div className={`${sBgCard} p-6 rounded-2xl border relative overflow-hidden`}>
+                                                            <div className="absolute top-0 left-0 h-1 w-full bg-emerald-500"></div>
+                                                            <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}><i className="fa-solid fa-calendar-week mr-2 text-emerald-500"></i>Ingresos Semanales</p>
+                                                            <h4 className={`text-2xl font-black ${sTextPri}`}>${stats.semana.total.toFixed(2)} MXN</h4>
+                                                            <p className={`text-[10px] ${sTextSec} mt-1.5`}>{stats.semana.count} transacciones en los últimos 7 días</p>
+                                                        </div>
+                                                        <div className={`${sBgCard} p-6 rounded-2xl border relative overflow-hidden`}>
+                                                            <div className="absolute top-0 left-0 h-1 w-full bg-blue-500"></div>
+                                                            <p className={`text-xs ${sTextSec} font-bold uppercase tracking-wider mb-1`}><i className="fa-solid fa-calendar-days mr-2 text-blue-500"></i>Ingresos Mensuales</p>
+                                                            <h4 className={`text-2xl font-black ${sTextPri}`}>${stats.mes.total.toFixed(2)} MXN</h4>
+                                                            <p className={`text-[10px] ${sTextSec} mt-1.5`}>{stats.mes.count} transacciones en los últimos 30 días</p>
+                                                        </div>
+                                                    </div>
 
-                                        {/* Sorting and filtering of global logs */}
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold">
+                                                        <div className={`${sBgCard} p-4 rounded-xl border flex justify-between items-center`}>
+                                                            <div>
+                                                                <span className={sTextSec}>Efectivo</span>
+                                                                <h5 className={`text-lg font-bold ${sTextPri} mt-1`}>${stats.pago.efectivo.total.toFixed(2)}</h5>
+                                                            </div>
+                                                            <span className="bg-slate-900/10 px-2.5 py-1.5 rounded-lg text-amber-500 border border-amber-500/20">{stats.pago.efectivo.count} pgs</span>
+                                                        </div>
+                                                        <div className={`${sBgCard} p-4 rounded-xl border flex justify-between items-center`}>
+                                                            <div>
+                                                                <span className={sTextSec}>Tarjeta</span>
+                                                                <h5 className={`text-lg font-bold ${sTextPri} mt-1`}>${stats.pago.tarjeta.total.toFixed(2)}</h5>
+                                                            </div>
+                                                            <span className="bg-slate-900/10 px-2.5 py-1.5 rounded-lg text-emerald-400 border border-emerald-500/20">{stats.pago.tarjeta.count} pgs</span>
+                                                        </div>
+                                                        <div className={`${sBgCard} p-4 rounded-xl border flex justify-between items-center`}>
+                                                            <div>
+                                                                <span className={sTextSec}>Transferencia SPEI</span>
+                                                                <h5 className={`text-lg font-bold ${sTextPri} mt-1`}>${stats.pago.spei.total.toFixed(2)}</h5>
+                                                            </div>
+                                                            <span className="bg-slate-900/10 px-2.5 py-1.5 rounded-lg text-blue-400 border border-blue-500/20">{stats.pago.spei.count} pgs</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+
                                         <div className={`${sBgCard} rounded-2xl border overflow-hidden shadow-xl`}>
                                             <div className={`p-6 border-b ${sBorder} bg-slate-900/10 flex flex-wrap gap-4 items-center justify-between text-xs font-semibold`}>
                                                 <h3 className={`font-bold text-lg ${sTextPri}`}>Historial Global de Transacciones</h3>
@@ -939,7 +1060,7 @@
                                                     <select 
                                                         value={filterMerchant} 
                                                         onChange={(e) => setFilterMerchant(e.target.value)} 
-                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}
+                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${sBgInput}`}
                                                     >
                                                         <option value="todos" className={sOptionBg}>Todos los comercios</option>
                                                         {merchants.map(m => <option key={m.ID_Comercio} value={m.ID_Comercio} className={sOptionBg}>{m.Nombre}</option>)}
@@ -947,7 +1068,7 @@
                                                     <select 
                                                         value={filterPayment} 
                                                         onChange={(e) => setFilterPayment(e.target.value)} 
-                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-white'}`}
+                                                        className={`border rounded-xl px-3 py-1.5 focus:outline-none cursor-pointer text-xs ${sBgInput}`}
                                                     >
                                                         <option value="todos" className={sOptionBg}>Todos los métodos de pago</option>
                                                         <option value="Efectivo" className={sOptionBg}>Efectivo</option>
@@ -991,7 +1112,7 @@
                                     </div>
                                 )}
 
-                                {/* --- STREAMING_CHUNK: Displaying Database Audit and Configuration tab... --- */}
+                                {/* ADMIN TAB: LIVE GOOGLE SHEETS AUDIT */}
                                 {activeAdminTab === 'db' && (
                                     <div className="space-y-6">
                                         <div className={`${sBgCard} p-6 rounded-2xl border space-y-4`}>
@@ -1015,7 +1136,7 @@
                                         </div>
 
                                         <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
-                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-150 border-slate-200 text-slate-850' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
+                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
                                                 <span className="font-bold">Tabla: Configuracion_Comercios (Doble clic / Edición Libre en Vivo)</span>
                                                 <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
                                             </div>
@@ -1028,6 +1149,8 @@
                                                             <th className={`p-3 border-r ${sBorder}`}>Usuario</th>
                                                             <th className={`p-3 border-r ${sBorder}`}>Contrasena</th>
                                                             <th className={`p-3 border-r ${sBorder} text-center`}>Estatus</th>
+                                                            <th className={`p-3 border-r ${sBorder} text-center`}>Horario</th>
+                                                            <th className={`p-3 border-r ${sBorder} text-center`}>Estatus Tienda</th>
                                                             <th className={`p-3 border-r ${sBorder} text-center`}>Categoria</th>
                                                             <th className={`p-3 border-r ${sBorder}`}>Contacto</th>
                                                             <th className="p-3">Idea Publicidad</th>
@@ -1071,10 +1194,32 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Estatus', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Estatus', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-905 border-slate-800 text-slate-200'}`}
                                                                     >
                                                                         <option value="Al corriente" className={sOptionBg}>Al corriente</option>
                                                                         <option value="Suspendido" className={sOptionBg}>Suspendido</option>
+                                                                    </select>
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder}`}>
+                                                                    <input 
+                                                                        type="text" 
+                                                                        value={m.Horario || "Sin Horario"} 
+                                                                        onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Horario', e.target.value)}
+                                                                        onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Horario', e.target.value)}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs ${sTextPri}`}
+                                                                    />
+                                                                </td>
+                                                                <td className={`p-2 border-r ${sBorder} text-center`}>
+                                                                    <select 
+                                                                        value={m.Estado_Tienda || "Abierto"} 
+                                                                        onChange={(e) => {
+                                                                            handleMerchantCellEdit(m.ID_Comercio, 'Estado_Tienda', e.target.value);
+                                                                            handleMerchantCellBlur(m.ID_Comercio, 'Estado_Tienda', e.target.value);
+                                                                        }}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-200'}`}
+                                                                    >
+                                                                        <option value="Abierto" className={sOptionBg}>Abierto</option>
+                                                                        <option value="Cerrado" className={sOptionBg}>Cerrado</option>
                                                                     </select>
                                                                 </td>
                                                                 <td className={`p-2 border-r ${sBorder}`}>
@@ -1108,7 +1253,7 @@
                                                                         onChange={(e) => handleMerchantCellEdit(m.ID_Comercio, 'Idea_Publicidad', e.target.value)}
                                                                         onBlur={(e) => handleMerchantCellBlur(m.ID_Comercio, 'Idea_Publicidad', e.target.value)}
                                                                         placeholder="Idea promocional generada..."
-                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs italic ${theme === 'light' ? 'text-slate-800' : 'text-slate-300'}`}
+                                                                        className={`w-full bg-transparent px-1.5 py-1 rounded border border-transparent focus:border-amber-500/40 focus:bg-amber-500/10 focus:outline-none text-xs italic ${sTextPri}`}
                                                                     />
                                                                 </td>
                                                             </tr>
@@ -1122,7 +1267,7 @@
                                             <h4 className={`font-bold text-sm ${sTextPri} mb-3 flex items-center gap-2`}>Historial de Salida JSON (Webhook live-stream)</h4>
                                             <div className="bg-slate-950 p-4 rounded-xl font-mono text-xs max-h-60 overflow-y-auto border border-slate-800 text-emerald-400">
                                                 {webhookLog.length === 0 ? (
-                                                    <span className="text-slate-600 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
+                                                    <span className="text-slate-500 italic">Esperando peticiones... Haz una compra de prueba o ejecuta una campaña publicitaria de IA para observar el flujo de salida de datos hacia Make.</span>
                                                 ) : (
                                                     webhookLog.map((log, index) => <pre key={index} className="text-emerald-400 bg-slate-900/60 p-2.5 rounded border border-slate-800/80 overflow-x-auto mt-2">{log}</pre>)
                                                 )}
@@ -1137,7 +1282,7 @@
                         {showNewMerchantModal && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative">
-                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex justify-between items-center">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
                                         <h3 className="font-black text-lg text-white">Registrar Nuevo Comercio</h3>
                                         <button onClick={() => setShowNewMerchantModal(false)} className="text-slate-400 hover:text-white text-lg"><i className="fa-solid fa-xmark"></i></button>
                                     </div>
@@ -1158,7 +1303,6 @@
                                             </div>
                                         </div>
                                         
-                                        {/* Register Merchant Photo Selector */}
                                         <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
                                             <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">Cargar Foto del Comercio (Galería/Cámara)</label>
                                             <input 
@@ -1184,6 +1328,19 @@
                                                 <input type="tel" placeholder="Teléfono" value={newMerchant.Telefono} onChange={(e) => setNewMerchant({...newMerchant, Telefono: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                         </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Horario de Atención</label>
+                                                <input type="text" placeholder="Lunes a Sábado 9am - 8pm" value={newMerchant.Horario} onChange={(e) => setNewMerchant({...newMerchant, Horario: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Estatus Operativo Inicial</label>
+                                                <select value={newMerchant.Estado_Tienda} onChange={(e) => setNewMerchant({...newMerchant, Estado_Tienda: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none">
+                                                    <option value="Abierto" className={sOptionBg}>Abierto</option>
+                                                    <option value="Cerrado" className={sOptionBg}>Cerrado</option>
+                                                </select>
+                                            </div>
+                                        </div>
                                         <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
                                             <p className="text-xs font-bold text-amber-500 uppercase tracking-widest">Credenciales de Acceso (Comercio)</p>
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -1206,24 +1363,23 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Displaying Client Merchant Workspace... --- */}
+                        {/* VIEW: MERCHANT PANEL */}
                         {view === 'merchant' && (
                             <div>
                                 {(() => {
                                     const merchant = merchants.find(m => m.ID_Comercio === loggedUser.merchantId);
                                     if (!merchant) return null;
+                                    const merchantOrders = orders.filter(o => o.ID_Comercio === merchant.ID_Comercio);
                                     return (
                                         <div>
-                                            {/* WhatsApp-style profile photo update section */}
                                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                                                 <div className="flex items-center gap-4">
-                                                    {/* Profile Picture with Camera hover edit overlay */}
                                                     <div className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-amber-500/30 shadow-lg cursor-pointer">
                                                         <img 
                                                             src={transformDriveUrl(merchant.FotoUrl) || "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"} 
                                                             alt={merchant.Nombre} 
                                                             className="w-full h-full object-cover" 
-                                                            onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
+                                                            onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=150&q=80"; }} 
                                                         />
                                                         <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold text-center">
                                                             <i className="fa-solid fa-camera text-xl mb-1"></i>
@@ -1246,14 +1402,23 @@
                                                 </div>
                                                 <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
                                                     <div>Estatus: <span className="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
+                                                    <div className="flex items-center gap-2">
+                                                        <span>Operatividad:</span>
+                                                        <span className={`px-2 py-0.5 rounded font-bold ${merchant.Estado_Tienda === 'Abierto' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-red-500/20 text-red-400'}`}>
+                                                            {merchant.Estado_Tienda || 'Abierto'}
+                                                        </span>
+                                                    </div>
                                                     <div>WhatsApp ID: <span className="font-mono text-slate-200">{merchant.WhatsApp_Group_ID || 'No asignado'}</span></div>
+                                                    <button onClick={() => playChime()} className="text-[10px] bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-slate-950 border border-amber-500/20 px-2 py-0.5 rounded font-bold transition flex items-center gap-1.5 mt-1">
+                                                        <i className="fa-solid fa-volume-high"></i> Desbloquear Alertas
+                                                    </button>
                                                 </div>
                                             </div>
 
                                             <div className={`flex gap-2 border-b ${sBorder} mb-6 font-bold text-sm`}>
                                                 <button onClick={() => setActiveMerchantTab('pedidos')} className={`pb-3 px-4 transition ${activeMerchantTab === 'pedidos' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
                                                     <i className="fa-solid fa-bell-concierge mr-2"></i> Pedidos en Vivo
-                                                    <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{orders.filter(o => o.ID_Comercio === merchant.ID_Comercio && o.Estado !== "Entregado").length}</span>
+                                                    <span className="ml-1.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{merchantOrders.filter(o => o.Estado !== "Entregado").length}</span>
                                                 </button>
                                                 <button onClick={() => setActiveMerchantTab('catalogo')} className={`pb-3 px-4 transition ${activeMerchantTab === 'catalogo' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'}`}>
                                                     <i className="fa-solid fa-list-check mr-2"></i> Mi Catálogo
@@ -1263,14 +1428,40 @@
                                                 </button>
                                             </div>
 
-                                            {/* LIVE ORDERS SECTION */}
+                                            {/* --- STREAMING_CHUNK: Processing orders tab for merchants... --- */}
                                             {activeMerchantTab === 'pedidos' && (
-                                                <div className="space-y-4">
+                                                <div className="space-y-6">
+                                                    {(() => {
+                                                        const stats = getFinancialStats(merchantOrders);
+                                                        return (
+                                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                                                <div className={`${sBgCard} p-5 rounded-xl border relative overflow-hidden`}>
+                                                                    <div className="absolute top-0 left-0 h-1 w-full bg-amber-500"></div>
+                                                                    <p className={`text-xs ${sTextSec} font-semibold uppercase mb-1`}>Ingresos de Hoy</p>
+                                                                    <h4 className={`text-xl font-black ${sTextPri}`}>${stats.hoy.total.toFixed(2)}</h4>
+                                                                    <p className={`text-[10px] ${sTextSec} mt-1`}>{stats.hoy.count} transacciones hoy</p>
+                                                                </div>
+                                                                <div className={`${sBgCard} p-5 rounded-xl border relative overflow-hidden`}>
+                                                                    <div className="absolute top-0 left-0 h-1 w-full bg-emerald-500"></div>
+                                                                    <p className={`text-xs ${sTextSec} font-semibold uppercase mb-1`}>Ingresos de la Semana</p>
+                                                                    <h4 className={`text-xl font-black ${sTextPri}`}>${stats.semana.total.toFixed(2)}</h4>
+                                                                    <p className={`text-[10px] ${sTextSec} mt-1`}>{stats.semana.count} transacciones esta semana</p>
+                                                                </div>
+                                                                <div className={`${sBgCard} p-5 rounded-xl border relative overflow-hidden`}>
+                                                                    <div className="absolute top-0 left-0 h-1 w-full bg-blue-500"></div>
+                                                                    <p className={`text-xs ${sTextSec} font-semibold uppercase mb-1`}>Ingresos del Mes</p>
+                                                                    <h4 className={`text-xl font-black ${sTextPri}`}>${stats.mes.total.toFixed(2)}</h4>
+                                                                    <p className={`text-[10px] ${sTextSec} mt-1`}>{stats.mes.count} transacciones este mes</p>
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })()}
+
                                                     <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
                                                         <div className="overflow-x-auto">
                                                             <table className="w-full text-left border-collapse">
                                                                 <thead>
-                                                                    <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-600' : 'bg-slate-950 text-slate-400'}`}>
+                                                                    <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-700' : 'bg-slate-950 text-slate-400'}`}>
                                                                         <th className="p-4">ID de Pedido</th>
                                                                         <th className="p-4">Cliente / Dirección</th>
                                                                         <th className="p-4">Productos</th>
@@ -1280,11 +1471,11 @@
                                                                     </tr>
                                                                 </thead>
                                                                 <tbody className="divide-y divide-slate-800 text-sm">
-                                                                    {orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
+                                                                    {merchantOrders.length === 0 ? (
                                                                         <tr><td colSpan="6" className="p-8 text-center text-slate-500 italic">No hay órdenes registradas para este comercio.</td></tr>
                                                                     ) : (
-                                                                        orders.filter(o => o.ID_Comercio === merchant.ID_Comercio).map(o => (
-                                                                            <tr key={o.ID_Orden} className={`hover:bg-slate-800/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
+                                                                        merchantOrders.map(o => (
+                                                                            <tr key={o.ID_Orden} className={`hover:bg-slate-850/20 transition ${o.Estado === 'Nuevo' ? 'bg-amber-500/5' : ''}`}>
                                                                                 <td className="p-4 font-mono font-bold text-amber-500">{o.ID_Orden}</td>
                                                                                 <td className="p-4">
                                                                                     <div className={`font-bold ${sTextPri}`}>{o.Cliente}</div>
@@ -1292,7 +1483,7 @@
                                                                                 </td>
                                                                                 <td className={`p-4 ${sTextPri} font-medium max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                                 <td className="p-4 text-xs font-semibold">
-                                                                                    <span className={`px-2 py-1 rounded border ${theme === 'light' ? 'bg-slate-50 border-slate-250 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>{o.Metodo_Pago}</span>
+                                                                                    <span className={`px-2 py-1 rounded border ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-950 border-slate-800 text-slate-300'}`}>{o.Metodo_Pago}</span>
                                                                                     {o.Cambio > 0 && <p className="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
                                                                                 </td>
                                                                                 <td className="p-4 font-black text-amber-500 text-base">${o.Total} MXN</td>
@@ -1317,7 +1508,7 @@
                                                 </div>
                                             )}
 
-                                            {/* MY CATALOGUE SECTION */}
+                                            {/* --- STREAMING_CHUNK: Processing catalog updates... --- */}
                                             {activeMerchantTab === 'catalogo' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                                     <div className={`${sBgCard} p-6 rounded-2xl border h-max space-y-4`}>
@@ -1357,8 +1548,7 @@
                                                                 </div>
                                                             </div>
                                                             
-                                                            {/* Real Photo Upload File Input for products */}
-                                                            <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                                                            <div className={`p-3 border rounded-xl space-y-2 ${sBgInput}`}>
                                                                 <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">¿Subir Foto Real del Producto?</label>
                                                                 <input 
                                                                     type="file" 
@@ -1389,16 +1579,15 @@
                                                         </form>
                                                     </div>
 
-                                                    {/* Product Catalog view */}
                                                     <div className="lg:col-span-2 space-y-4">
                                                         <div className={`${sBgCard} p-6 rounded-2xl border`}>
                                                             <h3 className={`font-bold text-lg ${sTextPri} mb-4`}>Productos en Menú / Catálogo Activo</h3>
                                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                 {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                                    <p className="text-slate-550 italic col-span-2 text-center py-6">Catálogo vacío.</p>
+                                                                    <p className="text-slate-500 col-span-2 text-center py-6">Catálogo vacío.</p>
                                                                 ) : (
                                                                     products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
-                                                                        <div key={p.ID_Producto} className={`${theme === 'light' ? 'bg-slate-50' : 'bg-slate-955'} p-4 rounded-xl border ${sBorder} flex justify-between items-start`}>
+                                                                        <div key={p.ID_Producto} className={`${theme === 'light' ? 'bg-slate-100' : 'bg-slate-950'} p-4 rounded-xl border ${sBorder} flex justify-between items-start`}>
                                                                             <div className="flex gap-3">
                                                                                 <span className={`text-3xl p-2 ${theme === 'light' ? 'bg-white' : 'bg-slate-900'} rounded-lg flex items-center justify-center w-14 h-14 overflow-hidden border ${sBorder}`}>
                                                                                     {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
@@ -1419,9 +1608,44 @@
                                                 </div>
                                             )}
 
-                                            {/* CONFIGURATION AND MARKETING AI */}
+                                            {/* --- STREAMING_CHUNK: Processing merchant configuration settings... --- */}
                                             {activeMerchantTab === 'config' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                                    
+                                                    <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 h-max`}>
+                                                        <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i className="fa-solid fa-clock"></i></div>
+                                                        <h3 className={`font-bold text-lg ${sTextPri}`}>Horarios de Operación</h3>
+                                                        <p className={`text-xs ${sTextSec}`}>Modifica tu horario público de atención y el estatus para que tus comensales lo observen al instante.</p>
+                                                        
+                                                        <div className="space-y-3">
+                                                            <div>
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Horario de Atención</label>
+                                                                <input 
+                                                                    type="text" 
+                                                                    value={merchant.Horario || ""} 
+                                                                    onChange={(e) => handleMerchantCellEdit(merchant.ID_Comercio, 'Horario', e.target.value)}
+                                                                    onBlur={(e) => handleMerchantCellBlur(merchant.ID_Comercio, 'Horario', e.target.value)}
+                                                                    placeholder="Lunes a Sábado 9:00 AM - 10:00 PM"
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-amber-500`}
+                                                                />
+                                                            </div>
+                                                            <div>
+                                                                <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Estado de Operatividad</label>
+                                                                <select 
+                                                                    value={merchant.Estado_Tienda || "Abierto"}
+                                                                    onChange={(e) => {
+                                                                        handleMerchantCellEdit(merchant.ID_Comercio, 'Estado_Tienda', e.target.value);
+                                                                        handleMerchantCellBlur(merchant.ID_Comercio, 'Estado_Tienda', e.target.value);
+                                                                    }}
+                                                                    className={`w-full ${sBgInput} border rounded-xl px-3 py-2 text-xs focus:outline-none`}
+                                                                >
+                                                                    <option value="Abierto" className={sOptionBg}>🟢 Abierto / Recibir Pedidos</option>
+                                                                    <option value="Cerrado" className={sOptionBg}>🔴 Cerrado / Bloquear Pedidos</option>
+                                                                </select>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                     <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 h-max`}>
                                                         <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i className="fa-solid fa-robot"></i></div>
                                                         <h3 className={`font-bold text-lg ${sTextPri}`}>Marketing Inteligente IA</h3>
@@ -1439,15 +1663,15 @@
                                                             <p className={`font-bold uppercase tracking-wider text-[10px] ${sTextSec}`}>Redes de Destino:</p>
                                                             <div className="flex flex-wrap gap-3">
                                                                 <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    <input type="checkbox" checked={targetNetworks.facebook} onChange={(e) => setTargetNetworks({...targetNetworks, facebook: e.target.checked})} className={`rounded ${sBgInput} text-amber-500 focus:ring-0`} />
                                                                     Facebook
                                                                 </label>
                                                                 <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.instagram} onChange={(e) => setTargetNetworks({...targetNetworks, instagram: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    <input type="checkbox" checked={targetNetworks.instagram} onChange={(e) => setTargetNetworks({...targetNetworks, instagram: e.target.checked})} className={`rounded ${sBgInput} text-amber-500 focus:ring-0`} />
                                                                     Instagram
                                                                 </label>
                                                                 <label className="flex items-center gap-1.5 cursor-pointer">
-                                                                    <input type="checkbox" checked={targetNetworks.whatsapp} onChange={(e) => setTargetNetworks({...targetNetworks, whatsapp: e.target.checked})} className="rounded bg-slate-950 border-slate-800 text-amber-500 focus:ring-0" />
+                                                                    <input type="checkbox" checked={targetNetworks.whatsapp} onChange={(e) => setTargetNetworks({...targetNetworks, whatsapp: e.target.checked})} className={`rounded ${sBgInput} text-amber-500 focus:ring-0`} />
                                                                     WhatsApp
                                                                 </label>
                                                             </div>
@@ -1456,10 +1680,10 @@
                                                         <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
                                                     </div>
 
-                                                    <div className="lg:col-span-2 space-y-6">
+                                                    <div className="space-y-6">
                                                         <div className={`${sBgCard} p-6 rounded-2xl border space-y-6`}>
                                                             <h3 className={`font-bold text-lg ${sTextPri} border-b ${sBorder} pb-3`}>Código QR & Enlace de Autogestión</h3>
-                                                            <div className="flex flex-col md:flex-row gap-6 items-center">
+                                                            <div className="flex flex-col gap-6 items-center">
                                                                 <div className="bg-white p-4 rounded-2xl w-44 h-44 flex items-center justify-center shadow-xl">
                                                                     <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(getDynamicStoreLink(merchant.ID_Comercio))}`} alt="QR" className="w-36 h-36" />
                                                                 </div>
@@ -1467,7 +1691,7 @@
                                                                     <span className={`text-[10px] uppercase font-bold tracking-wider block mb-1 ${sTextSec}`}>Enlace del Menú Digital Público</span>
                                                                     <div className="flex gap-2">
                                                                         <input type="text" value={getDynamicStoreLink(merchant.ID_Comercio)} readOnly className={`${sBgInput} border rounded-xl px-3 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none`} />
-                                                                        <button onClick={() => { navigator.clipboard.writeText(getDynamicStoreLink(merchant.ID_Comercio)); showToast("📋 Enlace copiado"); }} className={`bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 rounded-xl border ${sBorder}`}><i className="fa-solid fa-copy"></i></button>
+                                                                        <button onClick={() => { navigator.clipboard.writeText(getDynamicStoreLink(merchant.ID_Comercio)); showToast("📋 Enlace copiado"); }} className={`bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 rounded-xl border border-slate-700`}><i className="fa-solid fa-copy"></i></button>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -1481,28 +1705,37 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Displaying public storefront shop view... --- */}
+                        {/* VIEW: CONSUMER STOREFRONT */}
                         {view === 'shop' && (
                             <div>
                                 {(() => {
                                     const merchant = merchants.find(m => m.ID_Comercio === currentShopId);
-                                    if (!merchant) return <p className="text-center text-slate-550">Comercio deshabilitado.</p>;
+                                    if (!merchant) return <p className="text-center text-slate-500">Comercio deshabilitado.</p>;
                                     return (
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                                             <div className="lg:col-span-2 space-y-6">
                                                 <div className="relative rounded-2xl overflow-hidden border border-slate-800 h-64 flex flex-col justify-end p-6">
-                                                    <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} className="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.target.onerror = null; e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
-                                                    <div className="relative z-20 space-y-2">
-                                                        <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
-                                                        <h2 className="text-3xl font-black text-white">{merchant.Nombre}</h2>
-                                                        <p className="text-xs text-slate-300">📞 {merchant.Telefono}</p>
+                                                    <img src={transformDriveUrl(merchant.FotoUrl)} alt={merchant.Nombre} className="absolute inset-0 w-full h-full object-cover z-0" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1000&q=80"; }} />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 to-transparent z-10"></div>
+                                                    <div className="relative z-20 space-y-2 w-full flex flex-wrap items-end justify-between gap-3">
+                                                        <div className="space-y-1.5">
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded">MENÚ DIGITAL EN VIVO</span>
+                                                                <span className={`text-[10px] font-bold uppercase px-2 py-1 rounded flex items-center gap-1 shadow-lg ${merchant.Estado_Tienda === 'Cerrado' ? 'bg-red-600 text-white pulse-red' : 'bg-emerald-600 text-white pulse-green'}`}>
+                                                                    <span className="w-1.5 h-1.5 bg-white rounded-full"></span>
+                                                                    {merchant.Estado_Tienda === 'Cerrado' ? 'Cerrado' : 'Abierto'}
+                                                                </span>
+                                                            </div>
+                                                            <h2 className="text-3xl font-black text-white">{merchant.Nombre}</h2>
+                                                            <p className="text-xs text-slate-300">Horario: <span className="font-bold text-amber-500">{merchant.Horario || 'Abierto 24 Horas'}</span></p>
+                                                        </div>
+                                                        <p className="text-xs text-slate-300 font-bold bg-black/45 px-3 py-1.5 rounded-lg border border-white/10"><i className="fa-solid fa-phone mr-1.5"></i> {merchant.Telefono}</p>
                                                     </div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     {products.filter(p => p.ID_Comercio === merchant.ID_Comercio).length === 0 ? (
-                                                        <p className="text-slate-550 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
+                                                        <p className="text-slate-500 italic py-8 col-span-2 text-center">Catálogo sin productos temporalmente.</p>
                                                     ) : (
                                                         products.filter(p => p.ID_Comercio === merchant.ID_Comercio).map(p => (
                                                             <div key={p.ID_Producto} className={`${sBgCard} border p-5 rounded-2xl transition flex flex-col justify-between`}>
@@ -1516,14 +1749,25 @@
                                                                     <h3 className={`font-bold text-base pt-2 ${sTextPri}`}>{p.Nombre_Producto}</h3>
                                                                     <p className={`text-xs ${sTextSec} line-clamp-3`}>{p.Descripcion}</p>
                                                                 </div>
-                                                                <button onClick={() => addToCart(p)} className={`w-full mt-4 py-2 rounded-xl text-xs font-bold border transition ${theme === 'light' ? 'bg-slate-100 hover:bg-amber-500 hover:text-slate-950 border-slate-200' : 'bg-slate-950 hover:bg-amber-500 hover:text-slate-950 border-slate-800'}`}>Agregar al Pedido</button>
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        if (merchant.Estado_Tienda === "Cerrado") {
+                                                                            showToast("⚠️ Este comercio está cerrado por el momento.");
+                                                                            return;
+                                                                        }
+                                                                        addToCart(p);
+                                                                    }} 
+                                                                    className={`w-full mt-4 py-2 rounded-xl text-xs font-bold border transition ${theme === 'light' ? 'bg-white hover:bg-amber-500 hover:text-slate-955 border-slate-200 shadow-sm' : 'bg-slate-955 hover:bg-amber-500 hover:text-slate-955 border-slate-800'} ${merchant.Estado_Tienda === "Cerrado" ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                                >
+                                                                    {merchant.Estado_Tienda === "Cerrado" ? "Establecimiento Cerrado" : "Agregar al Pedido"}
+                                                                </button>
                                                             </div>
                                                         ))
                                                     )}
                                                 </div>
                                             </div>
 
-                                            {/* Shopping Cart checkout page */}
+                                            {/* Shopping Cart pane */}
                                             <div className="space-y-6">
                                                 <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 sticky top-24 shadow-2xl`}>
                                                     <h3 className={`font-bold text-lg ${sTextPri} border-b ${sBorder} pb-3 flex justify-between items-center`}>
@@ -1532,7 +1776,7 @@
                                                     </h3>
 
                                                     {Object.keys(cart).length === 0 ? (
-                                                        <p className="text-xs italic text-slate-550 text-center py-6">Carrito vacío.</p>
+                                                        <p className="text-xs italic text-slate-500 text-center py-6">Carrito vacío.</p>
                                                     ) : (
                                                         <div className="divide-y divide-slate-800 max-h-48 overflow-y-auto pr-1">
                                                             {Object.values(cart).map(item => (
@@ -1552,7 +1796,7 @@
                                                     )}
 
                                                     {Object.keys(cart).length > 0 && (
-                                                        <div className="space-y-4 pt-3 border-t border-slate-850 text-xs">
+                                                        <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
                                                             <div>
                                                                 <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Dirección de Envío *</label>
                                                                 <input type="text" placeholder="Calle, Número, Colonia" value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} className={`w-full ${sBgInput} border rounded-xl px-3 py-2 focus:outline-none focus:border-amber-500 text-xs`} required />
@@ -1561,7 +1805,7 @@
                                                                 <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Propina Repartidor</label>
                                                                 <div className="grid grid-cols-4 gap-1">
                                                                     {[0, 5, 10, 15].map(p => (
-                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-955 text-slate-400 border-slate-800'}`}>{p}%</button>
+                                                                        <button key={p} type="button" onClick={() => { setTipPercent(p); setCustomTip(''); }} className={`py-1 rounded border transition ${tipPercent === p ? 'bg-amber-500 text-slate-950' : 'bg-slate-950 text-slate-400 border-slate-850'}`}>{p}%</button>
                                                                     ))}
                                                                 </div>
                                                             </div>
@@ -1577,14 +1821,21 @@
                                                                 )}
                                                             </div>
 
-                                                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-850 space-y-2 font-mono text-[11px] text-slate-400">
+                                                            <div className="bg-slate-900 p-4 rounded-xl border border-slate-800 space-y-2 font-mono text-[11px] text-slate-400">
                                                                 <div className="flex justify-between"><span>Subtotal:</span><span>${cartTotal.toFixed(2)}</span></div>
                                                                 <div className="flex justify-between"><span>Envío:</span><span>${deliveryFee.toFixed(2)}</span></div>
                                                                 <div className="flex justify-between"><span>Propina:</span><span>${currentTipVal.toFixed(2)}</span></div>
-                                                                <div className="flex justify-between border-t border-slate-855 pt-2 font-bold text-white text-xs"><span>Total:</span><span className="text-amber-500">${finalTotal.toFixed(2)} MXN</span></div>
+                                                                <div className="flex justify-between border-t border-slate-800 pt-2 font-bold text-white text-xs"><span>Total:</span><span className="text-amber-500">${finalTotal.toFixed(2)} MXN</span></div>
                                                             </div>
 
-                                                            <button type="button" onClick={() => handlePlaceOrder(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black">Confirmar Pedido Digital</button>
+                                                            <button 
+                                                                type="button" 
+                                                                onClick={() => handlePlaceOrder(merchant)} 
+                                                                disabled={merchant.Estado_Tienda === "Cerrado"}
+                                                                className={`w-full py-3 rounded-xl font-black ${merchant.Estado_Tienda === "Cerrado" ? "bg-slate-800 text-slate-500 cursor-not-allowed" : "bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 shadow-lg"}`}
+                                                            >
+                                                                {merchant.Estado_Tienda === "Cerrado" ? "Tienda Cerrada Temporalmente" : "Confirmar Pedido Digital"}
+                                                            </button>
                                                         </div>
                                                     )}
                                                 </div>
@@ -1595,7 +1846,7 @@
                             </div>
                         )}
 
-                        {/* Modals for alerting client checkout */}
+                        {/* Modals */}
                         {orderConfirmedModal && lastPlacedOrder && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
@@ -1607,18 +1858,18 @@
                                         <div className="flex justify-between"><span>ID Orden:</span><span className="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
                                         <div className="flex justify-between"><span>Total:</span><span className="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
                                     </div>
-                                    <div className="p-6 bg-slate-950/40 border-t border-slate-850">
+                                    <div className="p-6 bg-slate-900/40 border-t border-slate-850">
                                         <button onClick={() => setOrderConfirmedModal(false)} className="w-full bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Aceptar</button>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* UI Custom Dialog (Alert Modals overriding window.alert) */}
+                        {/* UI Custom Dialog (Alert Modals) */}
                         {customAlert.show && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-905/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
-                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center border border-amber-500/20 text-lg">
                                             <i className="fa-solid fa-circle-info"></i>
                                         </div>
@@ -1627,7 +1878,7 @@
                                     <div className="p-6">
                                         <p className="text-slate-300 text-sm leading-relaxed">{customAlert.message}</p>
                                     </div>
-                                    <div className="p-6 bg-slate-950/40 border-t border-slate-800 text-right">
+                                    <div className="p-6 bg-slate-900/40 border-t border-slate-800 text-right">
                                         <button 
                                             onClick={() => setCustomAlert({ show: false, title: '', message: '' })}
                                             className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
@@ -1639,11 +1890,11 @@
                             </div>
                         )}
 
-                        {/* UI Custom Confirm (Modals overriding window.confirm) */}
+                        {/* UI Custom Confirm */}
                         {customConfirm.show && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
-                                    <div className="p-6 border-b border-slate-800 bg-slate-950/40 flex items-center gap-3">
+                                    <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-full bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 text-lg">
                                             <i className="fa-solid fa-triangle-exclamation"></i>
                                         </div>
@@ -1652,7 +1903,7 @@
                                     <div className="p-6">
                                         <p className="text-slate-300 text-sm leading-relaxed">{customConfirm.message}</p>
                                     </div>
-                                    <div className="p-6 bg-slate-950/40 border-t border-slate-800 flex justify-end gap-3 text-right">
+                                    <div className="p-6 bg-slate-900/40 border-t border-slate-800 flex justify-end gap-3 text-right">
                                         <button 
                                             onClick={() => setCustomConfirm({ show: false, title: '', message: '', onConfirm: null })}
                                             className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-5 py-2 rounded-xl text-xs transition"
