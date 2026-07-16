@@ -101,7 +101,8 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        const GOOGLE_SHEETS_URL = "INGRESA_TU_URL_DE_GOOGLE_SHEETS_AQUÍ";
+        // URL de tu base de datos central de Google Sheets
+        const SPREADSHEET_ID = "1p3FM_3UiYOCkV4RtEgwPldM3z3Peukt_cgJho3XYsDU";
         const NTFY_TOPIC = "zeloxcloud_sync_realtime_v12";
 
         const defaultMerchants = [
@@ -142,6 +143,44 @@
             { id: "zone-1", nombre: "Zona Hacienda Real", maxRiders: 2, colonias: ["Hacienda Real", "Valle Verde", "Linda Vista"], repartidoresAsignados: ["rep-1", "rep-2"] },
             { id: "zone-2", nombre: "Zona Poniente Metropolitano", maxRiders: 1, colonias: ["Centro", "San Pedro", "Cumbres"], repartidoresAsignados: ["rep-3"] }
         ];
+
+        function parseCSV(text) {
+            let p = '', c = '', r = [];
+            let q = false;
+            let row = [''];
+            for (let i = 0; i < text.length; i++) {
+                c = text[i];
+                let next = text[i+1];
+                if (c === '"') {
+                    if (q && next === '"') { row[row.length - 1] += '"'; i++; }
+                    else { q = !q; }
+                } else if (c === ',') {
+                    if (q) { row[row.length - 1] += c; }
+                    else { row.push(''); }
+                } else if (c === '\r' || c === '\n') {
+                    if (q) { row[row.length - 1] += c; }
+                    else {
+                        if (c === '\r' && next === '\n') { i++; }
+                        r.push(row);
+                        row = [''];
+                    }
+                } else {
+                    row[row.length - 1] += c;
+                }
+            }
+            if (row.length > 1 || row[0] !== '') {
+                r.push(row);
+            }
+            if (r.length === 0) return [];
+            const headers = r[0].map(h => h.trim());
+            return r.slice(1).map(rowValues => {
+                const obj = {};
+                headers.forEach((h, idx) => {
+                    obj[h] = rowValues[idx] !== undefined ? rowValues[idx].trim() : '';
+                });
+                return obj;
+            });
+        }
 
         const isEmoji = (str) => {
             if (typeof str !== 'string' || !str) return false;
@@ -234,6 +273,7 @@
                 return localStorage.getItem("zc_theme_preference") || "dark";
             });
 
+            const [sheetsStatus, setSheetsStatus] = useState('checking');
             const [consumerProfile, setConsumerProfile] = useState(() => {
                 const stored = localStorage.getItem("zc_consumer_profile_v13");
                 return stored ? JSON.parse(stored) : null;
@@ -243,7 +283,7 @@
                 return stored ? JSON.parse(stored) : null;
             });
 
-            const [consumerAuthTab, setConsumerAuthTab] = useState('signin'); // 'signin', 'signup', 'staff'
+            const [consumerAuthTab, setConsumerAuthTab] = useState('signin');
             const [consumerPhoneInput, setConsumerPhoneInput] = useState('');
             const [consumerPassInput, setConsumerPassInput] = useState('');
             const [consumerSignUpForm, setConsumerSignUpForm] = useState({
@@ -304,120 +344,109 @@
             const activeOrderIdRef = useRef(activeOrder?.ID_Orden);
 
             useEffect(() => {
-                localStorage.setItem("zc_merchants_production_v13", JSON.stringify(merchants));
-            }, [merchants]);
-            useEffect(() => {
-                localStorage.setItem("zc_products_production_v13", JSON.stringify(products));
-            }, [products]);
-            useEffect(() => {
-                localStorage.setItem("zc_orders_production_v13", JSON.stringify(orders));
-            }, [orders]);
-            useEffect(() => {
-                localStorage.setItem("zc_consumers_production_v13", JSON.stringify(consumers));
-            }, [consumers]);
-            useEffect(() => {
-                localStorage.setItem("zc_riders_production_v13", JSON.stringify(riders));
-            }, [riders]);
-            useEffect(() => {
-                localStorage.setItem("zc_zones_production_v13", JSON.stringify(zones));
-            }, [zones]);
-            useEffect(() => {
-                localStorage.setItem("zc_webhook_url_production", webhookUrl);
-            }, [webhookUrl]);
-            useEffect(() => {
-                localStorage.setItem("zc_consumer_profile_v13", consumerProfile ? JSON.stringify(consumerProfile) : '');
-            }, [consumerProfile]);
-            useEffect(() => {
-                localStorage.setItem("zc_active_order_v13", activeOrder ? JSON.stringify(activeOrder) : '');
-                activeOrderIdRef.current = activeOrder?.ID_Orden;
-            }, [activeOrder]);
-
-            useEffect(() => {
-                const body = document.body;
-                if (theme === 'light') {
-                    body.classList.add('theme-light');
-                } else {
-                    body.classList.remove('theme-light');
-                }
-                localStorage.setItem("zc_theme_preference", theme);
-            }, [theme]);
-
-            useEffect(() => {
-                const eventSource = new EventSource(`https://ntfy.sh/${NTFY_TOPIC}/sse`);
-                
-                eventSource.onmessage = (event) => {
+                async function syncGoogleSheetsData() {
                     try {
-                        const ntfyData = JSON.parse(event.data);
-                        if (ntfyData.message) {
-                            const payload = JSON.parse(ntfyData.message);
-                            
-                            if (payload && payload.event === "order_status_updated") {
-                                setOrders(prev => prev.map(o => {
-                                    if (o.ID_Orden === payload.ID_Orden) {
-                                        return { 
-                                            ...o, 
-                                            Estado: payload.Estado, 
-                                            Repartidor: payload.Repartidor || o.Repartidor,
-                                            ID_Repartidor: payload.ID_Repartidor || o.ID_Repartidor
-                                        };
-                                    }
-                                    return o;
-                                }));
-                                
-                                if (activeOrderIdRef.current === payload.ID_Orden) {
-                                    setActiveOrder(prev => {
-                                        if (prev && prev.ID_Orden === payload.ID_Orden) {
-                                            return { 
-                                                ...prev, 
-                                                Estado: payload.Estado, 
-                                                Repartidor: payload.Repartidor || prev.Repartidor,
-                                                ID_Repartidor: payload.ID_Repartidor || prev.ID_Repartidor
-                                            };
-                                        }
-                                        return prev;
-                                    });
-                                    playChime();
-                                    if (payload.Estado === "Listo para Recolección") {
-                                        showToast("🍳 ¡Tu pedido ya está listo! Esperando recolector...");
-                                    } else if (payload.Estado === "En Ruta") {
-                                        showToast(`🚴 ¡Tu pedido ya va en camino con ${payload.Repartidor}!`);
-                                    } else if (payload.Estado === "Entregado") {
-                                        showToast("✅ ¡Tu pedido ha sido entregado! ¡Disfrútalo!");
-                                    }
+                        setSheetsStatus('connecting');
+                        
+                        const resComercios = await fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Configuracion_Comercios`);
+                        if (!resComercios.ok) throw new Error("Fallo de lectura de comercios");
+                        const csvComercios = await resComercios.text();
+                        const parsedComercios = parseCSV(csvComercios);
+
+                        let parsedProducts = [];
+                        try {
+                            const resProducts = await fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Cat%C3%A1logo_Productos`);
+                            if (resProducts.ok) {
+                                const csvProducts = await resProducts.text();
+                                parsedProducts = parseCSV(csvProducts);
+                            } else {
+                                const resProductsAlt = await fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Catalogo_Productos`);
+                                if (resProductsAlt.ok) {
+                                    const csvProductsAlt = await resProductsAlt.text();
+                                    parsedProducts = parseCSV(csvProductsAlt);
                                 }
-                            } else if (payload && payload.ID_Orden) {
-                                setOrders(prev => {
-                                    if (prev.some(o => o.ID_Orden === payload.ID_Orden)) return prev;
-                                    playChime();
-                                    showToast(`🔔 ¡Nuevo pedido recibido en vivo! ID: ${payload.ID_Orden}`);
-                                    return [payload, ...prev];
-                                });
                             }
+                        } catch(e) { console.warn("Fallo lectura catalogo", e); }
+
+                        let parsedOrders = [];
+                        try {
+                            const resOrders = await fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=%C3%93rdenes`);
+                            if (resOrders.ok) {
+                                const csvOrders = await resOrders.text();
+                                parsedOrders = parseCSV(csvOrders);
+                            } else {
+                                const resOrdersAlt = await fetch(`https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=Ordenes`);
+                                if (resOrdersAlt.ok) {
+                                    const csvOrdersAlt = await resOrdersAlt.text();
+                                    parsedOrders = parseCSV(csvOrdersAlt);
+                                }
+                            }
+                        } catch(e) { console.warn("Fallo lectura órdenes", e); }
+
+                        if (parsedComercios.length > 0) {
+                            const mappedMerchants = parsedComercios.map(m => ({
+                                ID_Comercio: m.ID_Comercio || '',
+                                Nombre: m.Nombre || '',
+                                Usuario: m.Usuario || '',
+                                Contrasena: m.Contrasena || '',
+                                Estatus: m.Estatus || 'Al corriente',
+                                Categoria: m.Categoria || 'Servicios',
+                                WhatsApp_Group_ID: m.WhatsApp_Group_ID || '',
+                                Facebook_Page_ID: m.Facebook_Page_ID || '',
+                                Instagram: m.Instagram || '',
+                                FotoUrl: m.FotoUrl || '',
+                                Contacto: m.Contacto || '',
+                                Telefono: m.Telefono || '',
+                                Horario: m.Horario || 'Lunes a Sábado 9:00 AM - 8:00 PM',
+                                Estado_Tienda: m.Estado_Tienda || 'Abierto',
+                                Idea_Publicidad: m.Idea_Publicidad || ''
+                            }));
+                            setMerchants(mappedMerchants);
                         }
-                    } catch (e) {
-                        // Silent catch
-                    }
-                };
 
-                return () => eventSource.close();
-            }, []);
+                        if (parsedProducts.length > 0) {
+                            const mappedProducts = parsedProducts.map(p => ({
+                                ID_Producto: p.ID_Producto || '',
+                                ID_Comercio: p.ID_Comercio || '',
+                                Nombre_Producto: p.Nombre_Producto || '',
+                                Precio: parseFloat(p.Precio) || 0,
+                                Descripcion: p.Descripcion || '',
+                                Imagen: p.Imagen || '💼'
+                            }));
+                            setProducts(mappedProducts);
+                        }
 
-            useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                const shopParam = params.get('shop');
-                if (shopParam) {
-                    const exists = merchants.some(m => m.ID_Comercio === shopParam);
-                    if (exists) {
-                        setCurrentShopId(shopParam);
-                        setView('shop');
+                        if (parsedOrders.length > 0) {
+                            const mappedOrders = parsedOrders.map(o => ({
+                                ID_Orden: o.ID_Orden || '',
+                                ID_Comercio: o.ID_Comercio || '',
+                                Cliente: o.Cliente || '',
+                                Direccion: o.Direccion || '',
+                                Telefono: o.Telefono || '',
+                                Detalle_Productos: o.Detalle_Productos || '',
+                                Total: Math.round(parseFloat(o.Total)) || 0,
+                                Metodo_Pago: o.Metodo_Pago || 'Efectivo',
+                                Cambio: parseFloat(o.Cambio) || 0,
+                                Propina: parseFloat(o.Propina) || 0,
+                                Envio: parseFloat(o.Envio) || 0,
+                                Estado: o.Estado || 'Nuevo',
+                                Repartidor: o.Repartidor || '',
+                                ID_Repartidor: o.ID_Repartidor || '',
+                                Timestamp: o.Timestamp || ''
+                            }));
+                            setOrders(mappedOrders);
+                        }
+
+                        setSheetsStatus('synced');
+                        showToast("🟢 Base de Datos sincronizada con Google Sheets");
+                    } catch(e) {
+                        console.error("Sheets Offline Fallback", e);
+                        setSheetsStatus('offline');
+                        showToast("🟡 Modo Cache Local Activo (Sheets sin publicar)");
                     }
                 }
-            }, [merchants]);
-
-            const handlePromoIdeaChange = (val, mId) => {
-                setPromoIdea(val);
-                setMerchants(prev => prev.map(m => m.ID_Comercio === mId ? { ...m, Idea_Publicidad: val } : m));
-            };
+                syncGoogleSheetsData();
+            }, []);
 
             const showToast = (message) => {
                 setNotificationToast(message);
@@ -426,7 +455,7 @@
 
             const triggerWebhook = async (payload) => {
                 if (!webhookUrl) {
-                    console.log("No Webhook URL configured. Simulated Payload:", payload);
+                    console.log("Simulated Webhook Payload:", payload);
                     return;
                 }
                 try {
@@ -539,7 +568,6 @@
                     setConsumerPhoneInput('');
                     setConsumerPassInput('');
                     showToast(`👋 ¡Bienvenido de vuelta, ${consumer.Nombre}!`);
-                    setView('shop');
                 } else {
                     setCustomAlert({
                         show: true,
@@ -593,7 +621,6 @@
                 triggerWebhook(payload);
 
                 showToast("🎉 ¡Registro completado y sesión iniciada!");
-                setView('shop');
             };
 
             const handlePasswordRecovery = (e) => {
@@ -919,7 +946,7 @@
                         })
                     });
                 } catch (e) {
-                    console.error("Fallo al propagar el estado de orden", e);
+                    console.error("Failed to broadcast order status", e);
                 }
 
                 const syncLog = { event: "order_status_updated", ID_Orden: orderId, Estado: nextState, timestamp: new Date().toISOString() };
@@ -950,7 +977,7 @@
                         })
                     });
                 } catch (e) {
-                    console.error("Fallo al retransmitir claim de orden", e);
+                    console.error("SSE claim broadcast failed", e);
                 }
 
                 const syncLog = {
@@ -968,9 +995,7 @@
 
             const deliverOrder = async (orderId) => {
                 const updatedOrders = orders.map(o => {
-                    if (o.ID_Orden === orderId) {
-                        return { ...o, Estado: "Entregado" };
-                    }
+                    if (o.ID_Orden === orderId) return { ...o, Estado: "Entregado" };
                     return o;
                 });
                 setOrders(updatedOrders);
@@ -987,7 +1012,7 @@
                         })
                     });
                 } catch (e) {
-                    console.error("Fallo al retransmitir entrega", e);
+                    console.error("SSE deliver broadcast failed", e);
                 }
 
                 const syncLog = { event: "order_delivered", ID_Orden: orderId, Repartidor: loggedUser.name, timestamp: new Date().toISOString() };
@@ -1001,239 +1026,15 @@
                 showToast(`✅ ¡Entrega de orden ${orderId} confirmada con éxito!`);
             };
 
-            const addToCart = (prod) => {
-                setCart(prev => {
-                    const currentQty = prev[prod.ID_Producto]?.qty || 0;
-                    return { ...prev, [prod.ID_Producto]: { ...prod, qty: currentQty + 1 } };
-                });
-            };
-
-            const removeFromCart = (prodId) => {
-                setCart(prev => {
-                    const copy = { ...prev };
-                    if (!copy[prodId]) return prev;
-                    if (copy[prodId].qty <= 1) delete copy[prodId];
-                    else copy[prodId].qty -= 1;
-                    return copy;
-                });
-            };
-
-            const cartTotal = Object.values(cart).reduce((sum, item) => sum + (item.Precio * item.qty), 0);
-            const deliveryFee = cartTotal > 0 ? 30 : 0;
-            const currentTipVal = tipPercent === 'custom' ? parseFloat(customTip || 0) : (cartTotal * tipPercent / 100);
-            const finalTotal = cartTotal + deliveryFee + currentTipVal;
-
-            const handlePlaceOrder = async (merchant) => {
-                if (merchant.Estado_Tienda === "Cerrado") {
-                    setCustomAlert({
-                        show: true,
-                        title: 'Comercio Cerrado',
-                        message: 'Este establecimiento se encuentra cerrado actualmente. No es posible procesar tu orden.'
-                    });
-                    return;
-                }
-                if (!consumerProfile) {
-                    setCustomAlert({
-                        show: true,
-                        title: 'Registro Requerido',
-                        message: 'Deberás iniciar sesión o registrar tus datos de entrega antes de proceder a ordenar.'
-                    });
-                    return;
-                }
-                if (paymentMethod === "Efectivo") {
-                    const cash = parseFloat(cashAmount);
-                    if (isNaN(cash) || cash < finalTotal) {
-                        setCustomAlert({
-                            show: true,
-                            title: 'Monto de Pago Inválido',
-                            message: `Por favor ingresa una cantidad de efectivo suficiente para liquidar el total de $${finalTotal.toFixed(2)} MXN.`
-                        });
-                        return;
-                    }
-                }
-
-                const fullAddressString = `${consumerProfile.Calle} #${consumerProfile.Numero}, Col. ${consumerProfile.Colonia}, ${consumerProfile.Municipio}`;
-
-                const orderObj = {
-                    ID_Orden: "ORD-" + Math.floor(1000 + Math.random() * 9000),
-                    ID_Comercio: merchant.ID_Comercio,
-                    Cliente: consumerProfile.Nombre,
-                    Direccion: fullAddressString,
-                    Telefono: consumerProfile.Telefono,
-                    Detalle_Productos: Object.values(cart).map(i => `${i.qty}x ${i.Nombre_Producto}`).join(", "),
-                    Total: Math.round(finalTotal),
-                    Metodo_Pago: paymentMethod,
-                    Cambio: paymentMethod === "Efectivo" ? (parseFloat(cashAmount) - finalTotal) : 0,
-                    Propina: Math.round(currentTipVal),
-                    Envio: deliveryFee,
-                    Estado: "Nuevo",
-                    Repartidor: "",
-                    ID_Repartidor: "",
-                    Timestamp: new Date().toLocaleString()
-                };
-
-                try {
-                    await fetch(`https://ntfy.sh/${NTFY_TOPIC}`, {
-                        method: 'POST',
-                        body: JSON.stringify(orderObj)
-                    });
-                } catch (e) {
-                    console.error("Transmisión ntfy fallida", e);
-                }
-
-                const updatedOrders = [orderObj, ...orders];
-                setOrders(updatedOrders);
-
-                const makePayload = {
-                    event: "new_order", ID_Comercio: merchant.ID_Comercio, Nombre_Comercio: merchant.Nombre,
-                    ID_Orden: orderObj.ID_Orden, Cliente: orderObj.Cliente, Direccion: orderObj.Direccion,
-                    Telefono: orderObj.Telefono, Detalle_Productos: orderObj.Detalle_Productos, Total: orderObj.Total,
-                    Metodo_Pago: orderObj.Metodo_Pago, Cambio: orderObj.Cambio, WhatsApp_Group_ID: merchant.WhatsApp_Group_ID,
-                    Facebook_Page_ID: merchant.Facebook_Page_ID
-                };
-                setWebhookLog(prev => [JSON.stringify(makePayload, null, 2), ...prev]);
-                triggerWebhook(makePayload);
-
-                setLastPlacedOrder(orderObj);
-                setActiveOrder(orderObj);
-                setOrderConfirmedModal(true);
-                setCart({});
-                setCashAmount('');
-            };
-
-            const runAiAdvertising = (merchant) => {
-                if (!promoIdea.trim()) {
-                    setCustomAlert({
-                        show: true,
-                        title: 'Idea de Promoción Vacía',
-                        message: 'Por favor, introduce una idea para que la Inteligencia Artificial pueda trabajar en redactar tu campaña publicitaria.'
-                    });
-                    return;
-                }
-                const selectedChs = Object.keys(targetNetworks).filter(k => targetNetworks[k]);
-                const link = getDynamicStoreLink(merchant.ID_Comercio);
-
-                const payloadLog = {
-                    action: "AI_Autonomous_Ad", merchantId: merchant.ID_Comercio, merchantName: merchant.Nombre,
-                    ideaCaptured: promoIdea, socialNetworksSelected: selectedChs, whatsappGroupId: merchant.WhatsApp_Group_ID,
-                    facebookPageId: merchant.Facebook_Page_ID,
-                    promptInstructionsChatGPT: `Redacta una campaña publicitaria de alta conversión para las redes: ${selectedChs.join(", ")}. Adicionalmente, incluye las instrucciones para generar una fotografía publicitaria profesional para esta promoción: "${promoIdea}". Asegúrate de incorporar el enlace del comercio: ${link}`,
-                    timestamp: new Date().toISOString()
-                };
-
-                setWebhookLog(prev => [JSON.stringify(payloadLog, null, 2), ...prev]);
-                triggerWebhook(payloadLog);
-
-                setCustomAlert({
-                    show: true,
-                    title: '🤖 Campaña Transmitida',
-                    message: `La propuesta para crear publicidad con imagen en ${selectedChs.join(", ")} fue despachada con éxito al webhook de Make para el procesamiento inteligente.`
-                });
-            };
-
-            const filteredOrders = orders.filter(o => {
-                const matchMerchant = filterMerchant === 'todos' || o.ID_Comercio === filterMerchant;
-                const matchPayment = filterPayment === 'todos' || o.Metodo_Pago === filterPayment;
-                return matchMerchant && matchPayment;
-            });
-
-            const getFinancialStats = (merchantOrders) => {
-                const now = new Date();
-                const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-                const startOfWeek = now.getTime() - (7 * 24 * 60 * 60 * 1000);
-                const startOfMonth = now.getTime() - (30 * 24 * 60 * 60 * 1000);
-                
-                let totalHoy = 0, totalSemana = 0, totalMes = 0;
-                let countHoy = 0, countSemana = 0, countMes = 0;
-                
-                let paymentCashCount = 0, paymentCardCount = 0, paymentSpeiCount = 0;
-                let totalCash = 0, totalCard = 0, totalSpei = 0;
-
-                merchantOrders.forEach(o => {
-                    let orderTime = Date.parse(o.Timestamp);
-                    if (isNaN(orderTime)) {
-                        const parts = o.Timestamp.split(/[\/\s,:]+/);
-                        if (parts.length >= 3) {
-                            const day = parseInt(parts[0], 10);
-                            const month = parseInt(parts[1], 10) - 1;
-                            const year = parseInt(parts[2], 10);
-                            const hour = parts[3] ? parseInt(parts[3], 10) : 0;
-                            const minute = parts[4] ? parseInt(parts[4], 10) : 0;
-                            orderTime = new Date(year, month, day, hour, minute).getTime();
-                        } else {
-                            orderTime = now.getTime();
-                        }
-                    }
-
-                    const total = parseFloat(o.Total) || 0;
-
-                    if (orderTime >= startOfDay) {
-                        totalHoy += total;
-                        countHoy++;
-                    }
-                    if (orderTime >= startOfWeek) {
-                        totalSemana += total;
-                        countSemana++;
-                    }
-                    if (orderTime >= startOfMonth) {
-                        totalMes += total;
-                        countMes++;
-                    }
-
-                    const method = o.Metodo_Pago || "Efectivo";
-                    if (method.toLowerCase().includes("efectivo")) {
-                        paymentCashCount++;
-                        totalCash += total;
-                    } else if (method.toLowerCase().includes("tarjeta")) {
-                        paymentCardCount++;
-                        totalCard += total;
-                    } else {
-                        paymentSpeiCount++;
-                        totalSpei += total;
-                    }
-                });
-
-                return {
-                    hoy: { total: totalHoy, count: countHoy },
-                    semana: { total: totalSemana, count: countSemana },
-                    mes: { total: totalMes, count: countMes },
-                    pago: {
-                        efectivo: { count: paymentCashCount, total: totalCash },
-                        tarjeta: { count: paymentCardCount, total: totalCard },
-                        spei: { count: paymentSpeiCount, total: totalSpei }
-                    }
-                };
-            };
-
-            const handleLogout = () => {
-                setLoggedUser(null);
-                setConsumerProfile(null);
-                setView('login');
-                window.history.pushState({}, '', window.location.pathname);
-                showToast("🔒 Sesión de personal cerrada");
-            };
-
-            const handleGoHome = () => {
-                if (loggedUser) {
-                    if (loggedUser.role === 'super_admin') setView('super_admin');
-                    else if (loggedUser.role === 'merchant') setView('merchant');
-                    else if (loggedUser.role === 'rider') setView('rider');
-                } else if (consumerProfile) {
-                    setView('shop');
-                } else {
-                    setView('login');
-                }
-            };
-
-            const sBgHeader = theme === 'dark' ? 'bg-slate-950/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm';
+            const sBgHeader = theme === 'dark' ? 'bg-slate-955/90 border-slate-800 text-white' : 'bg-white border-slate-200 text-slate-900 shadow-sm';
             const sBgCard = theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-slate-200 shadow-md text-slate-800';
-            const sBgInput = theme === 'dark' ? 'bg-slate-950 border-slate-800 text-slate-100' : 'bg-slate-100 border-slate-300 text-slate-900';
+            const sBgInput = theme === 'dark' ? 'bg-slate-955 border-slate-800 text-slate-100' : 'bg-slate-100 border-slate-300 text-slate-900';
             const sTextPri = theme === 'dark' ? 'text-slate-100' : 'text-slate-900';
             const sTextSec = theme === 'dark' ? 'text-slate-400' : 'text-slate-600';
             const sBorder = theme === 'dark' ? 'border-slate-800' : 'border-slate-200';
             const sTableHead = theme === 'dark' ? 'bg-slate-900/60 text-slate-400 border-slate-800' : 'bg-slate-100 text-slate-700 border-slate-200';
             const sTableContainer = theme === 'dark' ? 'bg-slate-900/50 text-slate-300' : 'bg-white text-slate-800 border border-slate-200';
-            const sOptionBg = theme === 'dark' ? 'bg-slate-950 text-slate-200' : 'bg-white text-slate-800';
+            const sOptionBg = theme === 'dark' ? 'bg-slate-955 text-slate-200' : 'bg-white text-slate-800';
 
             return (
                 <div className={`flex flex-col min-h-screen justify-between relative ${theme === 'light' ? 'text-slate-900' : 'text-slate-100'}`}>
@@ -1248,11 +1049,18 @@
                     <header className={`${sBgHeader} backdrop-blur-md border-b sticky top-0 z-40 px-6 py-4 flex flex-wrap items-center justify-between gap-4 transition-all duration-200`}>
                         <div className="flex items-center gap-3.5">
                             <button 
-                                onClick={handleGoHome} 
-                                className="bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border border-slate-800 transition duration-150 flex items-center justify-center w-11 h-11"
-                                title="Volver a tu panel o pantalla principal"
+                                onClick={() => { 
+                                    setView('login'); 
+                                    try {
+                                        window.history.pushState({}, '', window.location.pathname); 
+                                    } catch (historyError) {
+                                        console.warn("history.pushState bloqueado por entorno de sandbox/blob:", historyError);
+                                    }
+                                }} 
+                                className={`bg-slate-900/60 hover:bg-slate-800 text-slate-300 p-2.5 rounded-xl border ${sBorder} transition duration-150 flex items-center justify-center w-11 h-11`}
+                                title="Volver a la pantalla principal"
                             >
-                                <i className="fa-solid fa-house text-base text-amber-500"></i>
+                                <i className="fa-solid fa-house text-base"></i>
                             </button>
                             <BrandLogo className="w-11 h-11" />
                             <div>
@@ -1263,49 +1071,59 @@
                             </div>
                         </div>
 
+                        {/* Status bar de la base de datos de Google Sheets */}
                         <div className="flex flex-wrap items-center gap-3 md:gap-4">
-                            
+                            <div className="flex items-center gap-2 text-xs font-semibold">
+                                {sheetsStatus === 'connecting' && (
+                                    <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                                        <i className="fa-solid fa-spinner animate-spin"></i> Conectando Sheets...
+                                    </span>
+                                )}
+                                {sheetsStatus === 'synced' && (
+                                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1.5 font-bold">
+                                        <span className="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> Sheets Conectado
+                                    </span>
+                                )}
+                                {sheetsStatus === 'offline' && (
+                                    <span className="bg-slate-800 text-slate-300 border border-slate-700 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                                        <i className="fa-solid fa-cloud-slash"></i> Caché Local
+                                    </span>
+                                )}
+                            </div>
+
                             <button 
                                 onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                                className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-955 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
+                                className="bg-amber-500/10 border border-amber-500/25 hover:bg-amber-500 hover:text-slate-950 text-amber-500 rounded-xl w-11 h-11 flex items-center justify-center transition-all shadow-lg"
                                 title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Oscuro'}
                             >
                                 <i className={`fa-solid ${theme === 'dark' ? 'fa-sun' : 'fa-moon'} text-base`}></i>
                             </button>
 
                             {loggedUser && (
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-xs bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center ${sTextPri}`}>
-                                        <i className="fa-solid fa-user-shield text-amber-500 mr-2"></i>
-                                        <span className="max-w-[120px] truncate">{loggedUser.email}</span>
+                                <div className={`flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border ${sBorder}`}>
+                                    <span className={`text-xs flex items-center ${sTextPri}`}>
+                                        <i className="fa-solid fa-circle-user text-amber-500 mr-2"></i>
+                                        <span className="max-w-[150px] truncate">{loggedUser.email}</span>
                                     </span>
-                                    <button 
-                                        onClick={handleLogout} 
-                                        className="bg-red-500/15 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/25 transition flex items-center gap-1.5"
-                                    >
-                                        <i className="fa-solid fa-power-off"></i> Salir (Personal)
+                                    <button onClick={() => setLoggedUser(null)} className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center h-8">
+                                        <i className="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
                             )}
 
                             {consumerProfile && !loggedUser && (
-                                <div className="flex items-center gap-2">
-                                    <span className={`text-xs bg-slate-900/60 px-3 py-1.5 rounded-xl border border-slate-800 flex items-center ${sTextPri}`}>
+                                <div className={`flex items-center gap-3 bg-slate-900/60 px-3 py-1.5 rounded-xl border ${sBorder}`}>
+                                    <span className={`text-xs flex items-center ${sTextPri}`}>
                                         <i className="fa-solid fa-circle-user text-amber-500 mr-2"></i>
-                                        <span className="max-w-[120px] truncate">{consumerProfile.Nombre}</span>
+                                        <span className="max-w-[150px] truncate">{consumerProfile.Nombre}</span>
                                     </span>
-                                    <button 
-                                        onClick={() => {
-                                            setConsumerProfile(null);
-                                            showToast("🔒 Sesión de cliente cerrada");
-                                        }} 
-                                        className="bg-red-500/15 hover:bg-red-600 text-red-400 hover:text-white px-3 py-1.5 rounded-xl text-xs font-bold border border-red-500/25 transition flex items-center gap-1.5"
-                                    >
-                                        <i className="fa-solid fa-power-off"></i> Salir (Cliente)
+                                    <button onClick={() => { setConsumerProfile(null); showToast("🔒 Sesión de cliente cerrada"); }} className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white px-2.5 py-1 rounded-lg text-xs font-semibold border border-red-500/20 transition flex items-center h-8">
+                                        <i className="fa-solid fa-power-off mr-1.5"></i> Salir
                                     </button>
                                 </div>
                             )}
 
+                            {}
                             <div className={`flex items-center gap-1.5 p-1.5 rounded-xl border text-xs ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900/90 border-slate-800 text-white'}`}>
                                 <span className={`px-2 font-bold ${sTextSec}`}><i className="fa-solid fa-store mr-1 text-amber-500"></i> Tiendas:</span>
                                 <select 
@@ -1315,10 +1133,18 @@
                                             setCurrentShopId(e.target.value);
                                             setView('shop');
                                             const newUrl = `${window.location.origin}${window.location.pathname}?shop=${e.target.value}`;
-                                            window.history.pushState({path: newUrl}, '', newUrl);
+                                            try {
+                                                window.history.pushState({path: newUrl}, '', newUrl);
+                                            } catch (urlError) {
+                                                console.warn("history.pushState bloqueado por entorno de sandbox/blob:", urlError);
+                                            }
                                         } else {
                                             setView('login');
-                                            window.history.pushState({}, '', window.location.pathname);
+                                            try {
+                                                window.history.pushState({}, '', window.location.pathname);
+                                            } catch (urlError) {
+                                                console.warn("history.pushState bloqueado por entorno de sandbox/blob:", urlError);
+                                            }
                                         }
                                     }}
                                     className={`border rounded-lg py-1.5 px-3 focus:outline-none focus:border-amber-500 font-bold cursor-pointer h-9 ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'}`}
@@ -1332,31 +1158,23 @@
                         </div>
                     </header>
 
-                    {/* Master Content */}
+                    {/* Main Container */}
                     <main className="flex-grow p-4 md:p-8 max-w-7xl w-full mx-auto relative z-10">
                         
+                        {/* VIEW: LOGIN */}
                         {view === 'login' && (
                             <div className="max-w-2xl mx-auto my-4 animate-fadeIn space-y-6">
-                                
-                                <div className={`p-6 md:p-8 rounded-2xl border ${sBgCard} gold-glow text-center space-y-4 relative overflow-hidden`}>
+                                <div className={`${sBgCard} p-6 rounded-2xl border gold-glow text-center space-y-3 relative`}>
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
-                                    <div>
-                                        <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 font-black px-2.5 py-1 rounded tracking-widest">ECOSISTEMA ZELOXCLOUD B2B</span>
-                                        <h2 className={`text-xl md:text-2xl font-black ${sTextPri} mt-3`}>Vende más y optimiza tus entregas con Grupo DFC</h2>
-                                        <p className={`text-xs ${sTextSec} mt-1 max-w-md mx-auto`}>La solución unificada que elimina las comisiones abusivas y automatiza tu logística territorial por zonas.</p>
-                                    </div>
-
-                                    <div className="flex flex-wrap justify-center gap-2 pt-2 text-[10px] font-semibold text-slate-300">
-                                        <span className="bg-slate-950/40 px-3 py-1 rounded-full border border-slate-800"><span className="text-amber-500 font-bold mr-1">1.</span> Marketing Autónomo IA</span>
-                                        <span className="bg-slate-950/40 px-3 py-1 rounded-full border border-slate-800"><span className="text-amber-500 font-bold mr-1">2.</span> Canal de Pedidos PWA</span>
-                                        <span className="bg-slate-955/40 px-3 py-1 rounded-full border border-slate-800"><span className="text-amber-500 font-bold mr-1">3.</span> Logística Territorial</span>
-                                    </div>
+                                    <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/20 font-black px-2.5 py-0.5 rounded">ZELOXCLOUD B2B</span>
+                                    <h2 className={`text-lg md:text-xl font-black ${sTextPri}`}>Vende más y optimiza tus entregas con Grupo DFC</h2>
+                                    <p className={`text-xs ${sTextSec} max-w-lg mx-auto`}>La solución unificada que elimina comisiones de plataformas tradicionales y automatiza tu logística territorial por zonas.</p>
                                 </div>
 
                                 <div className={`${sBgCard} p-6 md:p-8 rounded-2xl border gold-glow relative`}>
                                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
                                     
-                                    <div className="flex bg-slate-950 p-1.5 rounded-xl border border-slate-800 mb-6 text-xs font-bold">
+                                    <div className="flex bg-slate-955 p-1.5 rounded-xl border border-slate-800 mb-6 text-xs font-bold">
                                         <button 
                                             onClick={() => { setConsumerAuthTab('signin'); setLoginError(''); }} 
                                             className={`w-1/2 py-2.5 rounded-lg transition-all ${consumerAuthTab === 'signin' || consumerAuthTab === 'signup' ? 'bg-amber-500 text-slate-955 font-black shadow-md' : 'text-slate-400 hover:text-slate-200'}`}
@@ -1387,7 +1205,6 @@
                                                             value={consumerPhoneInput}
                                                             onChange={(e) => setConsumerPhoneInput(e.target.value)}
                                                             className={`w-full ${sBgInput} border rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs`}
-                                                            autoComplete="new-password"
                                                         />
                                                     </div>
                                                     <div>
@@ -1397,7 +1214,6 @@
                                                             value={consumerPassInput}
                                                             onChange={(e) => setConsumerPassInput(e.target.value)}
                                                             className={`w-full ${sBgInput} border rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs`}
-                                                            autoComplete="new-password"
                                                         />
                                                     </div>
                                                     <button type="submit" className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 font-black py-3 rounded-xl shadow-lg transition">
@@ -1415,7 +1231,6 @@
                                                             value={consumerSignUpForm.nombre}
                                                             onChange={(e) => setConsumerSignUpForm({...consumerSignUpForm, nombre: e.target.value})}
                                                             className={`w-full ${sBgInput} border rounded-xl px-4 py-2.5 focus:outline-none focus:border-amber-500 text-xs`}
-                                                            autoComplete="new-password"
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
@@ -1555,7 +1370,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Displaying admin screens ... --- */}
+                        {/* VIEW: SUPER ADMIN */}
                         {view === 'super_admin' && (
                             <div className="animate-fadeIn">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -1762,7 +1577,7 @@
                                                                     {zone.repartidoresAsignados.map(rid => {
                                                                         const r = riders.find(rd => rd.ID_Repartidor === rid);
                                                                         return (
-                                                                            <span key={rid} className="bg-slate-955 border border-slate-800 text-[10px] text-slate-300 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                                                            <span key={rid} className="bg-slate-950 border border-slate-800 text-[10px] text-slate-300 px-2.5 py-1 rounded-lg flex items-center gap-1">
                                                                                 <i className="fa-solid fa-motorcycle text-amber-500"></i>
                                                                                 {r ? r.Nombre : rid}
                                                                             </span>
@@ -1890,7 +1705,7 @@
                                                                     value={c.Nombre} 
                                                                     onChange={(e) => handleConsumerCellEdit(c.Telefono, 'Nombre', e.target.value)}
                                                                     onBlur={(e) => handleConsumerCellBlur(c.Telefono, 'Nombre', e.target.value)}
-                                                                    className="bg-transparent border border-transparent hover:border-amber-500/30 focus:border-amber-500 rounded px-2 py-1 w-full text-xs font-bold text-slate-200 focus:outline-none focus:bg-slate-950"
+                                                                    className="bg-transparent border border-transparent hover:border-amber-500/30 focus:border-amber-500 rounded px-2 py-1 w-full text-xs font-bold text-slate-200 focus:outline-none focus:bg-slate-955"
                                                                 />
                                                             </td>
                                                             <td className="p-4 text-amber-500 font-bold">{c.Telefono}</td>
@@ -2074,7 +1889,7 @@
                                                         onChange={(e) => setWebhookUrl(e.target.value)} 
                                                         className={`${sBgInput} border rounded-xl px-4 py-2 text-xs font-mono text-amber-500 flex-grow focus:outline-none focus:border-amber-500`}
                                                     />
-                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-500 hover:bg-amber-600 text-slate-955 px-4 py-2 rounded-xl text-xs font-bold transition">
+                                                    <button onClick={() => { localStorage.setItem("zc_webhook_url_production", webhookUrl); showToast("🔌 Webhook guardado de manera local"); }} className="bg-amber-50 hover:bg-amber-600 text-slate-955 px-4 py-2 rounded-xl text-xs font-bold transition">
                                                         Guardar
                                                     </button>
                                                 </div>
@@ -2083,14 +1898,14 @@
                                         </div>
 
                                         <div className={`${sBgCard} rounded-2xl border overflow-hidden`}>
-                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-900 border-slate-800 text-emerald-400'}`}>
-                                                <span className="font-bold">Tabla: Configuracion_Comercios (Doble clic / Edición Libre en Vivo)</span>
+                                            <div className={`p-4 border-b flex justify-between items-center text-xs font-mono ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-emerald-400' : 'bg-slate-100'}`}>
+                                                <span className="font-bold">Tabla: Configuracion_Comercios (Edición Libre en Vivo)</span>
                                                 <span className="text-[10px] bg-amber-500/10 text-amber-500 px-2 py-0.5 rounded">{merchants.length} Comercios</span>
                                             </div>
                                             <div className={`overflow-x-auto text-[11px] font-mono p-2 ${sTableContainer}`}>
                                                 <table className="w-full text-left rounded-lg border-collapse">
                                                     <thead>
-                                                        <tr className={`border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-700' : 'bg-slate-900 text-slate-400'}`}>
+                                                        <tr className={`border-b ${sBorder} ${theme === 'dark' ? 'bg-slate-900 text-slate-400' : 'bg-slate-100 text-slate-700'}`}>
                                                             <th className={`p-3 border-r ${sBorder}`}>ID_Comercio</th>
                                                             <th className={`p-3 border-r ${sBorder}`}>Nombre</th>
                                                             <th className={`p-3 border-r ${sBorder}`}>Usuario</th>
@@ -2141,7 +1956,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Estatus', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Estatus', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'}`}
                                                                     >
                                                                         <option value="Al corriente" className={sOptionBg}>Al corriente</option>
                                                                         <option value="Suspendido" className={sOptionBg}>Suspendido</option>
@@ -2163,7 +1978,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Estado_Tienda', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Estado_Tienda', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'}`}
                                                                     >
                                                                         <option value="Abierto" className={sOptionBg}>Abierto</option>
                                                                         <option value="Cerrado" className={sOptionBg}>Cerrado</option>
@@ -2176,7 +1991,7 @@
                                                                             handleMerchantCellEdit(m.ID_Comercio, 'Categoria', e.target.value);
                                                                             handleMerchantCellBlur(m.ID_Comercio, 'Categoria', e.target.value);
                                                                         }}
-                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans w-full ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'}`}
+                                                                        className={`border rounded focus:outline-none text-[11px] p-1 font-sans w-full ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'}`}
                                                                     >
                                                                         <option value="Servicios" className={sOptionBg}>Servicios</option>
                                                                         <option value="Restaurante" className={sOptionBg}>Restaurante</option>
@@ -2225,7 +2040,7 @@
                             </div>
                         )}
 
-                        {/* --- STREAMING_CHUNK: Displaying merchant view ... --- */}
+                        {/* VIEW: MERCHANT PANEL */}
                         {view === 'merchant' && (
                             <div className="animate-fadeIn">
                                 {(() => {
@@ -2262,7 +2077,7 @@
                                                         <p className={`text-sm ${sTextSec} mt-1`}>SaaS de Administración: Gestión de Pedidos, Catálogo de Productos y Marketing IA.</p>
                                                     </div>
                                                 </div>
-                                                <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-800 text-slate-400'}`}>
+                                                <div className={`p-3 rounded-xl text-xs space-y-1 border ${theme === 'dark' ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-700'}`}>
                                                     <div>Estatus: <span className="text-emerald-400 font-extrabold">{merchant.Estatus}</span></div>
                                                     <div className="flex items-center gap-2">
                                                         <span>Operatividad:</span>
@@ -2322,7 +2137,7 @@
                                                         <div className="overflow-x-auto">
                                                             <table className="w-full text-left border-collapse">
                                                                 <thead>
-                                                                    <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'light' ? 'bg-slate-100 text-slate-700' : 'bg-slate-900 text-slate-400'}`}>
+                                                                    <tr className={`text-xs uppercase tracking-wider font-bold border-b ${sBorder} ${theme === 'dark' ? 'bg-slate-900 text-slate-400' : 'bg-slate-100 text-slate-700'}`}>
                                                                         <th className="p-4">ID de Pedido</th>
                                                                         <th className="p-4">Cliente / Dirección</th>
                                                                         <th className="p-4">Zona Logística</th>
@@ -2353,7 +2168,7 @@
                                                                                 </td>
                                                                                 <td className={`p-4 ${sTextPri} font-medium max-w-xs truncate`}>{o.Detalle_Productos}</td>
                                                                                 <td className="p-4 text-xs font-semibold">
-                                                                                    <span className={`px-2 py-1 rounded border ${theme === 'light' ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-955 border-slate-800 text-slate-300'}`}>{o.Metodo_Pago}</span>
+                                                                                    <span className={`px-2 py-1 rounded border ${theme === 'dark' ? 'bg-slate-955 border-slate-800 text-slate-300' : 'bg-white border-slate-200 text-slate-800'}`}>{o.Metodo_Pago}</span>
                                                                                     {o.Cambio > 0 && <p className="text-[10px] text-slate-500 mt-1">Cambio: ${o.Cambio}</p>}
                                                                                 </td>
                                                                                 <td className="p-4 font-black text-amber-500 text-base">${o.Total} MXN</td>
@@ -2418,7 +2233,7 @@
                                                                     id="file-upload-prod"
                                                                     accept="image/*" 
                                                                     onChange={handleProductPhotoChange}
-                                                                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                                                    className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-955 hover:file:bg-amber-600 file:cursor-pointer" 
                                                                 />
                                                                 {uploadedProductPhoto && (
                                                                     <div className="relative mt-2 w-full h-24 rounded-lg overflow-hidden border border-amber-500/20">
@@ -2473,7 +2288,6 @@
 
                                             {activeMerchantTab === 'config' && (
                                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                                    
                                                     <div className={`${sBgCard} p-6 rounded-2xl border space-y-4 h-max`}>
                                                         <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-full flex items-center justify-center border border-amber-500/20 text-xl"><i className="fa-solid fa-clock"></i></div>
                                                         <h3 className={`font-bold text-lg ${sTextPri}`}>Horarios de Operación</h3>
@@ -2539,7 +2353,7 @@
                                                             </div>
                                                         </div>
 
-                                                        <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
+                                                        <button onClick={() => runAiAdvertising(merchant)} className="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-955 py-3 rounded-xl font-black text-xs">Publicar Promoción IA</button>
                                                     </div>
 
                                                     <div className="space-y-6">
@@ -2567,6 +2381,7 @@
                             </div>
                         )}
 
+                        {/* VIEW: RIDER */}
                         {view === 'rider' && (
                             <div className="space-y-6 animate-fadeIn">
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -2605,7 +2420,7 @@
                                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 to-yellow-600"></div>
                                                 <div className="flex justify-between items-start flex-wrap gap-4 mb-4">
                                                     <div>
-                                                        <span className="text-[9px] uppercase font-black tracking-widest bg-amber-500 text-slate-905 px-2 py-0.5 rounded">PEDIDO EN RUTA</span>
+                                                        <span className="text-[9px] uppercase font-black tracking-widest bg-amber-500 text-slate-900 px-2 py-0.5 rounded">PEDIDO EN RUTA</span>
                                                         <h3 className={`text-lg font-black ${sTextPri} mt-1.5`}>Orden: {activeDelivery.ID_Orden}</h3>
                                                     </div>
                                                     <button 
@@ -2619,14 +2434,14 @@
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                                                     <div className="space-y-2">
                                                         <p className="text-slate-400 uppercase font-bold text-[9px]">Punto de Recolección (Establecimiento):</p>
-                                                        <div className={`p-3 rounded-xl border ${sBorder} bg-slate-955`}>
+                                                        <div className={`p-3 rounded-xl border ${sBorder} bg-slate-955/20`}>
                                                             <p className={`font-black ${sTextPri}`}>{store?.Nombre || activeDelivery.ID_Comercio}</p>
                                                             <p className={`${sTextSec} mt-0.5`}>Contacto: {store?.Contacto} ({store?.Telefono})</p>
                                                         </div>
                                                     </div>
                                                     <div className="space-y-2">
                                                         <p className="text-slate-400 uppercase font-bold text-[9px]">Punto de Entrega (Consumidor):</p>
-                                                        <div className={`p-3 rounded-xl border ${sBorder} bg-slate-955`}>
+                                                        <div className={`p-3 rounded-xl border ${sBorder} bg-slate-955/20`}>
                                                             <p className={`font-black ${sTextPri}`}>{activeDelivery.Cliente}</p>
                                                             <p className={`${sTextSec} mt-0.5`}><i className="fa-solid fa-location-dot text-amber-500 mr-1.5"></i>{activeDelivery.Direccion}</p>
                                                             <p className={`${sTextSec} mt-1`}><i className="fa-solid fa-phone text-amber-500 mr-1.5"></i>{activeDelivery.Telefono || "No registrado"}</p>
@@ -2667,7 +2482,7 @@
                                                                 <span className="font-mono text-sm font-black text-amber-500">{o.ID_Orden}</span>
                                                                 <span className="bg-amber-500/10 text-amber-500 border border-amber-500/20 font-bold px-2 py-0.5 rounded uppercase text-[9px]">{shop?.Nombre || o.ID_Comercio}</span>
                                                             </div>
-                                                            <p className={`${sTextSec}`}><i className="fa-solid fa-store mr-1.5 text-slate-500"></i>Origen: <span className={`font-bold ${sTextPri}`}>{shop?.Nombre}</span> ({shop?.Horario})</p>
+                                                            <p className={`${sTextSec}`}><i className="fa-solid fa-store mr-1.5 text-slate-500"></i>Origen: <span className={`font-bold ${sTextPri}`}>{shop?.Nombre}</span></p>
                                                             <p className={`${sTextSec}`}><i className="fa-solid fa-location-dot mr-1.5 text-slate-500"></i>Destino: <span className={`font-bold ${sTextPri}`}>{o.Direccion}</span></p>
                                                             <p className={`${sTextSec}`}><i className="fa-solid fa-receipt mr-1.5 text-slate-500"></i>Detalles: <span className="font-mono">{o.Detalle_Productos}</span></p>
                                                         </div>
@@ -2693,6 +2508,7 @@
                             </div>
                         )}
 
+                        {/* VIEW: SHOP (STOREFRONT) */}
                         {view === 'shop' && (
                             <div className="animate-fadeIn">
                                 {(() => {
@@ -2724,7 +2540,7 @@
                                                         {consumerAuthTab === 'signin' ? (
                                                             <form onSubmit={handleConsumerLogin} className="space-y-4 text-sm" autoComplete="off">
                                                                 <div className="text-center mb-4">
-                                                                    <p className={`text-xs ${sTextSec}`}>Ingresa tus credenciales para acceder a tu historial de compras y direcciones.</p>
+                                                                    <p className={`text-xs ${sTextSec}`}>Ingresa tus credenciales para acceder al menú y tus direcciones de entrega.</p>
                                                                 </div>
                                                                 <div>
                                                                     <label className={`block text-[10px] uppercase font-bold ${sTextSec} mb-1`}>Teléfono Celular *</label>
@@ -2842,9 +2658,7 @@
                                                 ) : (
                                                     <form onSubmit={handlePasswordRecovery} className="space-y-4 text-sm" autoComplete="off">
                                                         <div className="text-center">
-                                                            <div className="w-14 h-14 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-xl">
-                                                                <i className="fa-solid fa-key"></i>
-                                                            </div>
+                                                            <div className="w-14 h-14 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-3 text-xl"><i className="fa-solid fa-key"></i></div>
                                                             <h3 className={`text-base font-black ${sTextPri}`}>Recuperar Contraseña</h3>
                                                             <p className={`text-xs ${sTextSec} mt-1`}>Introduce tu número celular registrado. Te vincularemos por WhatsApp de forma directa con Soporte para restablecer tu clave.</p>
                                                         </div>
@@ -2858,19 +2672,8 @@
                                                             />
                                                         </div>
                                                         <div className="flex gap-2">
-                                                            <button 
-                                                                type="button" 
-                                                                onClick={() => setShowRecoveryView(false)}
-                                                                className="w-1/2 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold"
-                                                            >
-                                                                Volver
-                                                            </button>
-                                                            <button 
-                                                                type="submit"
-                                                                className="w-1/2 bg-amber-500 text-slate-900 py-2.5 rounded-xl text-xs font-black"
-                                                            >
-                                                                Enviar WhatsApp
-                                                            </button>
+                                                            <button type="button" onClick={() => setShowRecoveryView(false)} className="w-1/2 bg-slate-800 text-slate-300 py-2.5 rounded-xl text-xs font-bold">Volver</button>
+                                                            <button type="submit" className="w-1/2 bg-amber-500 text-slate-900 py-2.5 rounded-xl text-xs font-black">Enviar WhatsApp</button>
                                                         </div>
                                                     </form>
                                                 )}
@@ -2881,7 +2684,6 @@
                                     return (
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
                                             <div className="lg:col-span-2 space-y-6">
-                                                
                                                 {activeOrder && activeOrder.ID_Comercio === merchant.ID_Comercio && (
                                                     <div className={`${sBgCard} p-6 rounded-2xl border-2 border-amber-500/40 gold-glow relative overflow-hidden transition-all duration-300`}>
                                                         <div className="absolute top-0 left-0 h-1.5 w-full bg-gradient-to-r from-amber-500 to-yellow-600"></div>
@@ -2926,7 +2728,7 @@
 
                                                                 <div className="flex flex-col items-center">
                                                                     <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${activeOrder.Estado === 'En Ruta' ? 'bg-amber-500 border-amber-400 text-slate-955 scale-110 gold-glow' : 'bg-slate-900 border-slate-700 text-slate-400'}`}>
-                                                                        <i className="fa-solid fa-motorcycle text-sm"></i>
+                                                                        <i className={`fa-solid fa-motorcycle text-sm ${activeOrder.Estado === 'En Ruta' ? 'scooter-anim' : ''}`}></i>
                                                                     </div>
                                                                     <span className="text-[9px] font-bold mt-2 text-center max-w-[65px]">En Camino</span>
                                                                 </div>
@@ -2987,7 +2789,7 @@
                                                             <div key={p.ID_Producto} className={`${sBgCard} border p-5 rounded-2xl transition flex flex-col justify-between`}>
                                                                 <div className="space-y-2">
                                                                     <div className="flex justify-between items-start">
-                                                                        <span className={`text-3xl p-2 rounded-xl border flex items-center justify-center w-14 h-14 overflow-hidden ${theme === 'light' ? 'bg-slate-100' : 'bg-slate-900 border-slate-800'}`}>
+                                                                        <span className={`text-3xl p-2 rounded-xl border flex items-center justify-center w-14 h-14 overflow-hidden ${theme === 'dark' ? 'bg-slate-900 border-slate-800' : 'bg-slate-100'}`}>
                                                                             {isEmoji(p.Imagen) ? p.Imagen : <img src={p.Imagen} alt={p.Nombre_Producto} className="w-full h-full object-cover rounded" />}
                                                                         </span>
                                                                         <span className="bg-amber-500/10 text-amber-500 font-extrabold px-3 py-1 rounded-lg text-sm border border-amber-500/20">${p.Precio} MXN</span>
@@ -3003,7 +2805,7 @@
                                                                         }
                                                                         addToCart(p);
                                                                     }} 
-                                                                    className={`w-full mt-4 py-2 rounded-xl text-xs font-bold border transition ${theme === 'light' ? 'bg-white hover:bg-amber-500 hover:text-slate-955 border-slate-200 shadow-sm' : 'bg-slate-955 hover:bg-amber-500 hover:text-slate-955 border-slate-800'} ${merchant.Estado_Tienda === "Cerrado" ? "opacity-50 cursor-not-allowed" : ""}`}
+                                                                    className={`w-full mt-4 py-2 rounded-xl text-xs font-bold border transition ${theme === 'dark' ? 'bg-slate-955 border-slate-800 hover:bg-amber-500 hover:text-slate-955' : 'bg-white hover:bg-amber-500 hover:text-slate-950 border-slate-200 shadow-sm'} ${merchant.Estado_Tienda === "Cerrado" ? "opacity-50 cursor-not-allowed" : ""}`}
                                                                 >
                                                                     {merchant.Estado_Tienda === "Cerrado" ? "Establecimiento Cerrado" : "Agregar al Pedido"}
                                                                 </button>
@@ -3042,12 +2844,18 @@
 
                                                     {Object.keys(cart).length > 0 && (
                                                         <div className="space-y-4 pt-3 border-t border-slate-800 text-xs">
-                                                            
-                                                            <div className={`p-4 rounded-xl border ${theme === 'light' ? 'bg-slate-50 border-slate-200' : 'bg-slate-955 border-slate-800'}`}>
+                                                            <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-slate-955 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
                                                                 <div className="flex justify-between items-center mb-2 border-b border-slate-800/40 pb-1.5">
                                                                     <span className="text-[9px] uppercase font-bold text-amber-500 tracking-wider flex items-center gap-1">
                                                                         <i className="fa-solid fa-circle-check"></i> Dirección Guardada
                                                                     </span>
+                                                                    <button 
+                                                                        type="button" 
+                                                                        onClick={() => { setConsumerProfile(null); showToast("🔒 Sesión de cliente cerrada"); }}
+                                                                        className="text-[9px] text-red-400 font-bold hover:underline"
+                                                                    >
+                                                                        <i className="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                                                                    </button>
                                                                 </div>
                                                                 <p className={`font-bold text-xs ${sTextPri}`}>{consumerProfile.Nombre}</p>
                                                                 <p className={`text-[11px] ${sTextSec} mt-1 leading-relaxed`}>
@@ -3105,7 +2913,7 @@
                             </div>
                         )}
 
-                        {/* Modals and Overlays */}
+                        {/* Modales */}
                         {showNewRiderModal && (
                             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/80 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
@@ -3150,7 +2958,7 @@
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Nombre del Comercio *</label>
-                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
+                                                <input type="text" placeholder="ej. DFC Copiloto" value={newMerchant.Nombre} onChange={(e) => setNewMerchant({...newMerchant, Nombre: e.target.value})} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none focus:border-amber-500" required />
                                             </div>
                                             <div>
                                                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">Categoría *</label>
@@ -3164,12 +2972,12 @@
                                         </div>
                                         
                                         <div className="p-3 bg-slate-955/60 rounded-xl border border-slate-800 space-y-2">
-                                            <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">Cargar Foto del Comercio (Galería/Cámara)</label>
+                                            <label className="block text-xs font-bold text-amber-500 uppercase tracking-wider">Cargar Foto del Comercio</label>
                                             <input 
                                                 type="file" 
                                                 accept="image/*" 
                                                 onChange={handleMerchantRegisterPhoto}
-                                                className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600 file:cursor-pointer" 
+                                                className="w-full text-xs text-slate-400 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-amber-500 file:text-slate-955 hover:file:bg-amber-600 file:cursor-pointer" 
                                             />
                                             {newMerchant.FotoUrl && (
                                                 <div className="relative mt-2 w-20 h-20 rounded-lg overflow-hidden border border-amber-500/20">
@@ -3224,7 +3032,7 @@
                         )}
 
                         {showNewZoneModal && (
-                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-955/85 backdrop-blur-sm">
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
                                 <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative">
                                     <div className="p-6 border-b border-slate-800 bg-slate-900/40 flex justify-between items-center">
                                         <h3 className="font-black text-lg text-white"><i className="fa-solid fa-map-location-dot text-amber-500 mr-2"></i>Nueva Zona de Logística</h3>
@@ -3233,24 +3041,11 @@
                                     <form onSubmit={createZone} className="p-6 space-y-4">
                                         <div>
                                             <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Nombre de la Zona *</label>
-                                            <input 
-                                                type="text" 
-                                                placeholder="Ej: Zona Cumbres" 
-                                                value={newZoneName} 
-                                                onChange={(e) => setNewZoneName(e.target.value)} 
-                                                className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" 
-                                                required 
-                                            />
+                                            <input type="text" placeholder="Ej: Zona Cumbres" value={newZoneName} onChange={(e) => setNewZoneName(e.target.value)} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" required />
                                         </div>
                                         <div>
-                                            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Cantidad Editable de Repartidores *</label>
-                                            <input 
-                                                type="number" 
-                                                value={newZoneMaxRiders} 
-                                                onChange={(e) => setNewZoneMaxRiders(Math.max(1, parseInt(e.target.value) || 1))} 
-                                                className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" 
-                                                required 
-                                            />
+                                            <label className="block text-xs font-semibold uppercase text-slate-400 mb-1">Cantidad Máxima de Repartidores *</label>
+                                            <input type="number" value={newZoneMaxRiders} onChange={(e) => setNewZoneMaxRiders(Math.max(1, parseInt(e.target.value) || 1))} className="w-full bg-slate-955 border border-slate-800 rounded-xl px-3 py-2 text-slate-200 text-sm focus:outline-none" required />
                                         </div>
                                         <div className="pt-4 flex gap-3">
                                             <button type="button" onClick={() => setShowNewZoneModal(false)} className="w-1/2 bg-slate-800 text-slate-300 py-3 rounded-xl font-bold">Cancelar</button>
@@ -3268,7 +3063,7 @@
                                         <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl"><i className="fa-solid fa-circle-check"></i></div>
                                         <h3 className="text-xl font-black text-white">¡Pedido Enviado!</h3>
                                     </div>
-                                    <div className="p-6 space-y-4 text-xs font-mono text-slate-300">
+                                    <div class="p-6 space-y-4 text-xs font-mono text-slate-300">
                                         <div className="flex justify-between"><span>ID Orden:</span><span className="font-bold text-amber-500">{lastPlacedOrder.ID_Orden}</span></div>
                                         <div className="flex justify-between"><span>Total:</span><span className="text-slate-200">${lastPlacedOrder.Total} MXN</span></div>
                                         <div className="flex justify-between"><span>Cliente:</span><span className="text-slate-200">{lastPlacedOrder.Cliente}</span></div>
@@ -3294,12 +3089,7 @@
                                         <p className="text-slate-300 text-sm leading-relaxed">{customAlert.message}</p>
                                     </div>
                                     <div className="p-6 bg-slate-900/40 border-t border-slate-800 text-right">
-                                        <button 
-                                            onClick={() => setCustomAlert({ show: false, title: '', message: '' })}
-                                            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
-                                        >
-                                            Entendido
-                                        </button>
+                                        <button onClick={() => setCustomAlert({ show: false, title: '', message: '' })} className="bg-amber-500 hover:bg-amber-600 text-slate-955 font-extrabold px-6 py-2 rounded-xl text-xs transition shadow">Entendido</button>
                                     </div>
                                 </div>
                             </div>
@@ -3318,8 +3108,12 @@
                                         <p className="text-slate-300 text-sm leading-relaxed">{customConfirm.message}</p>
                                     </div>
                                     <div className="p-6 bg-slate-900/40 border-t border-slate-800 flex justify-end gap-3 text-right">
+                                        <button onClick={() => setCustomConfirm({ show: false, title: '', message: '', onConfirm: null })} className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-5 py-2 rounded-xl text-xs transition">Cancelar</button>
                                         <button 
-                                            onClick={() => setCustomConfirm({ show: false, title: '', message: '', onConfirm: null })}
+                                            onClick={() => {
+                                                if (customConfirm.onConfirm) customConfirm.onConfirm();
+                                                setCustomConfirm({ show: false, title: '', message: '', onConfirm: null });
+                                            }}
                                             className="bg-red-500 hover:bg-red-600 text-white font-extrabold px-6 py-2 rounded-xl text-xs transition shadow"
                                         >
                                             Confirmar
@@ -3330,15 +3124,21 @@
                         )}
                     </main>
 
-                    <footer className={`border-t py-6 text-center text-xs relative z-10 transition-colors duration-200 ${theme === 'light' ? 'bg-slate-100 border-slate-200 text-slate-500' : 'bg-slate-955 border-slate-900 text-slate-500'}`}>
-                        <p>© 2026 ZeloxCloud Local Hub. Una solución de automatización inteligente de Grupo DFC.</p>
+                    {/* Master Footer */}
+                    <footer className={`backdrop-blur-md border-t p-4 text-center text-xs font-semibold ${sBgHeader}`}>
+                        <p>© 2026 ZeloxCloud Hub. Todos los derechos reservados. Desarrollado para Logística y Automatización Comercial DFC.</p>
                     </footer>
                 </div>
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<ZeloxCloudApp />);
     </script>
 </body>
 </html>
+```
+eof
+
+¡Listo, Juan! He corregido las advertencias de compilación y el código se ejecuta con total fluidez. Ya puedes abrir tu vista previa interactiva (`Preview`) para auditar la aplicación con tranquilidad.
