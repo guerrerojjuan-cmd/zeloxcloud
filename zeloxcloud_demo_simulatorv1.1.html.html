@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador Interactivo - ZeloxCloud SaaS</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- React & ReactDOM (UMD) -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #09090b;
+            background-image: radial-gradient(circle at 50% 30%, rgba(197, 160, 89, 0.08) 0%, rgba(9, 9, 11, 1) 75%);
+        }
+        .gold-glow {
+            box-shadow: 0 0 25px rgba(197, 160, 89, 0.15);
+        }
+        .scooter-anim {
+            animation: drive 1.5s infinite ease-in-out;
+        }
+        @keyframes drive {
+            0%, 100% { transform: translateX(-3px) translateY(0); }
+            50% { transform: translateX(3px) translateY(-2px); }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5a059;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen relative overflow-x-hidden text-base">
+
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const mockStore = {
+            ID_Comercio: "la-trattoria-demo",
+            Nombre: "La Trattoria Demo 🍕",
+            Contacto: "Chef Luigi Demo",
+            Telefono: "8110009999",
+            Horario: "Lunes a Domingo 12:00 PM - 11:00 PM",
+            Estado_Tienda: "Abierto",
+            FotoUrl: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=600&q=80"
+        };
+
+        const mockProducts = [
+            { ID_Producto: "dp1", ID_Comercio: "la-trattoria-demo", Nombre_Producto: "Pizza Margherita Premium", Precio: 180, Descripcion: "Deliciosa masa artesanal madurada, salsa de tomate San Marzano, mozzarella fresca y albahaca.", Imagen: "🍕" },
+            { ID_Producto: "dp2", ID_Comercio: "la-trattoria-demo", Nombre_Producto: "Fettuccine Alfredo con Pollo", Precio: 160, Descripcion: "Pasta fresca sumergida en una sedosa y cremosa salsa de queso parmesano y pechuga a la parrilla.", Imagen: "🍝" },
+            { ID_Producto: "dp3", ID_Comercio: "la-trattoria-demo", Nombre_Producto: "Tiramisú de la Casa", Precio: 85, Descripcion: "Receta tradicional italiana elaborada con mascarpone premium, café espresso y cacao.", Imagen: "🍰" },
+            { ID_Producto: "dp4", ID_Comercio: "la-trattoria-demo", Nombre_Producto: "Copa de Vino Tinto Chianti", Precio: 110, Descripcion: "Maridaje perfecto para tus pastas o pizzas. 150ml.", Imagen: "🍷" }
+        ];
+
+        function ZeloxCloudSimulator() {
+            const [orders, setOrders] = useState([
+                { ID_Orden: "ORD-7001", Cliente: "Luis Medina", Direccion: "Av. Paseo de los Leones #102, Monterrey", Telefono: "8117650620", Detalle_Productos: "1x Pizza Margherita Premium", Total: 210, Metodo_Pago: "Efectivo", Cambio: 90, Propina: 0, Envio: 30, Estado: "Entregado", Repartidor: "Carlos Veloz", ID_Repartidor: "rep-1", Timestamp: "Hoy, 12:30 PM" }
+            ]);
+            
+            const [cart, setCart] = useState({});
+            const [clientProfile] = useState({
+                Nombre: "Gaston Villarreal (Prospecto)",
+                Telefono: "8117650620",
+                Calle: "Vía Veneto",
+                Numero: "105",
+                Colonia: "Hacienda Real",
+                Municipio: "Monterrey"
+            });
+
+            const [activeOrder, setActiveOrder] = useState(null);
+            const [rightTab, setRightTab] = useState('comercio'); // 'comercio', 'repartidor'
+            const [tipPercent, setTipPercent] = useState(10);
+            const [paymentMethod, setPaymentMethod] = useState('Efectivo');
+            const [cashAmount, setCashAmount] = useState('250');
+            const [guideStep, setGuideStep] = useState(1); 
+
+            const triggerStep = (stepNum) => {
+                if (guideStep === stepNum - 1) {
+                    setGuideStep(stepNum);
+                }
+            };
+
+            const addToCart = (prod) => {
+                setCart(prev => {
+                    const currentQty = prev[prod.ID_Producto]?.qty || 0;
+                    return { ...prev, [prod.ID_Producto]: { ...prod, qty: currentQty + 1 } };
+                });
+                triggerStep(2);
+            };
+
+            const removeFromCart = (prodId) => {
+                setCart(prev => {
+                    const copy = { ...prev };
+                    if (!copy[prodId]) return prev;
+                    if (copy[prodId].qty <= 1) delete copy[prodId];
+                    else copy[prodId].qty -= 1;
+                    return copy;
+                });
+            };
+
+            const cartTotal = Object.values(cart).reduce((sum, item) => sum + (item.Precio * item.qty), 0);
+            const deliveryFee = cartTotal > 0 ? 30 : 0;
+            const currentTipVal = cartTotal * tipPercent / 100;
+            const finalTotal = cartTotal + deliveryFee + currentTipVal;
+
+            const handlePlaceOrder = () => {
+                const orderObj = {
+                    ID_Orden: "ORD-" + Math.floor(1000 + Math.random() * 9000),
+                    ID_Comercio: mockStore.ID_Comercio,
+                    Cliente: clientProfile.Nombre,
+                    Direccion: `${clientProfile.Calle} #${clientProfile.Numero}, Col. ${clientProfile.Colonia}, ${clientProfile.Municipio}`,
+                    Telefono: clientProfile.Telefono,
+                    Detalle_Productos: Object.values(cart).map(i => `${i.qty}x ${i.Nombre_Producto}`).join(", "),
+                    Total: Math.round(finalTotal),
+                    Metodo_Pago: paymentMethod,
+                    Cambio: paymentMethod === "Efectivo" ? (parseFloat(cashAmount || 0) - finalTotal) : 0,
+                    Propina: Math.round(currentTipVal),
+                    Envio: deliveryFee,
+                    Estado: "Nuevo",
+                    Repartidor: "",
+                    ID_Repartidor: "",
+                    Timestamp: "Hace un momento"
+                };
+
+                const updated = [orderObj, ...orders];
+                setOrders(updated);
+                setActiveOrder(orderObj);
+                setCart({});
+                setGuideStep(3); 
+                setRightTab('comercio');
+            };
+
+            const advanceOrderState = (orderId, nextState) => {
+                setOrders(prev => prev.map(o => {
+                    if (o.ID_Orden === orderId) {
+                        return { ...o, Estado: nextState };
+                    }
+                    return o;
+                }));
+                if (activeOrder && activeOrder.ID_Orden === orderId) {
+                    setActiveOrder(prev => ({ ...prev, Estado: nextState }));
+                }
+                
+                if (nextState === "Listo para Recolección") {
+                    setGuideStep(4); 
+                    setRightTab('repartidor');
+                }
+            };
+
+            const claimOrder = (orderId) => {
+                setOrders(prev => prev.map(o => {
+                    if (o.ID_Orden === orderId) {
+                        return { ...o, Estado: "En Ruta", ID_Repartidor: "rep-1", Repartidor: "Carlos Veloz" };
+                    }
+                    return o;
+                }));
+                if (activeOrder && activeOrder.ID_Orden === orderId) {
+                    setActiveOrder(prev => ({ ...prev, Estado: "En Ruta", ID_Repartidor: "rep-1", Repartidor: "Carlos Veloz" }));
+                }
+                setGuideStep(5); 
+            };
+
+            const deliverOrder = (orderId) => {
+                setOrders(prev => prev.map(o => {
+                    if (o.ID_Orden === orderId) {
+                        return { ...o, Estado: "Entregado" };
+                    }
+                    return o;
+                }));
+                if (activeOrder && activeOrder.ID_Orden === orderId) {
+                    setActiveOrder(prev => ({ ...prev, Estado: "Entregado" }));
+                }
+                setGuideStep(6); 
+            };
+
+            const resetSimulator = () => {
+                setOrders([
+                    { ID_Orden: "ORD-7001", Cliente: "Luis Medina", Direccion: "Av. Paseo de los Leones #102, Monterrey", Telefono: "8117650620", Detalle_Productos: "1x Pizza Margherita Premium", Total: 210, Metodo_Pago: "Efectivo", Cambio: 90, Propina: 0, Envio: 30, Estado: "Entregado", Repartidor: "Carlos Veloz", ID_Repartidor: "rep-1", Timestamp: "Hoy, 12:30 PM" }
+                ]);
+                setCart({});
+                setActiveOrder(null);
+                setGuideStep(1);
+                setRightTab('comercio');
+            };
+
+            return (
+                <div class="min-h-screen flex flex-col justify-between text-slate-100">
+                    
+                    {/* Header with enlarged font size */}
+                    <header class="bg-slate-900/90 border-b border-slate-800 px-6 py-5 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-40 backdrop-blur-md">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-slate-955 border border-amber-500/30 rounded-xl flex items-center justify-center p-1 shadow-lg">
+                                <svg viewBox="0 0 100 100" class="w-full h-full text-amber-500" fill="currentColor">
+                                    <path d="M50 15 C38 15 32 25 38 35 C28 38 28 52 38 55 C42 55 72 55 75 51 C82 48 80 35 70 35 C68 25 58 15 50 15 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinecap="round" />
+                                </svg>
+                            </div>
+                            <div>
+                                <h1 class="text-lg md:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+                                    ZeloxCloud <span class="text-xs bg-amber-500/10 text-amber-500 font-bold px-3 py-1 rounded-full border border-amber-500/20">Demo Interactivo</span>
+                                </h1>
+                                <p class="text-xs md:text-sm text-slate-400">Simulador de Logística y Ventas en Tiempo Real</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <button 
+                                onClick={resetSimulator}
+                                class="bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500 hover:text-slate-950 text-amber-500 px-5 py-2.5 rounded-xl text-sm font-bold transition flex items-center gap-2"
+                            >
+                                <i class="fa-solid fa-arrows-rotate"></i> Reiniciar Simulador
+                            </button>
+                            <a 
+                                href="index.html" 
+                                class="bg-slate-955 text-slate-300 hover:text-white px-5 py-2.5 rounded-xl text-sm font-bold border border-slate-800 transition"
+                            >
+                                <i class="fa-solid fa-house mr-1"></i> Volver a DFC
+                            </a>
+                        </div>
+                    </header>
+
+                    {/* Tutorial Guide Bar */}
+                    <div class="bg-amber-500 text-slate-950 px-6 py-4 font-bold text-sm md:text-base flex justify-between items-center shadow-lg">
+                        <span class="flex items-center gap-3">
+                            <i class="fa-solid fa-circle-question animate-bounce text-lg"></i>
+                            <span>
+                                {guideStep === 1 && "Paso 1: Selecciona productos de la Trattoria Demo (📱 PWA de Cliente) a la izquierda para agregarlos al carrito."}
+                                {guideStep === 2 && "Paso 2: Haz clic en 'Confirmar Pedido Digital' abajo a la izquierda para despachar tu compra."}
+                                {guideStep === 3 && "Paso 3: El pedido llegó con campana en la Consola del Comercio (💻 SaaS) a la derecha. Haz clic en 'Listo para Recolección'."}
+                                {guideStep === 4 && "Paso 4: El pedido está listo. Ve a la App del Repartidor (🚴 DaaS) a la derecha y haz clic en 'Aceptar Entrega'."}
+                                {guideStep === 5 && "Paso 5: El pedido está en camino. Haz clic en 'Confirmar Entrega' en el panel del repartidor para finalizar el ciclo."}
+                                {guideStep === 6 && "🎉 ¡Excelente! Completaste con éxito el ciclo de ZeloxCloud. Si deseas, puedes reiniciar el simulador de arriba."}
+                            </span>
+                        </span>
+                        <span class="text-xs bg-slate-950 text-amber-500 px-3 py-1.5 rounded-md font-black font-mono">Paso {guideStep}/6</span>
+                    </div>
+
+                    {/* Core Simulator Split Screen */}
+                    <main class="flex-grow p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-7xl w-full mx-auto text-sm md:text-base">
+                        
+                        {/* COLUMN 1: CLIENT PWA (📱) */}
+                        <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col justify-between overflow-hidden shadow-2xl relative">
+                            
+                            {/* PWA Phone Header Mockup */}
+                            <div class="bg-slate-955 border-b border-slate-800 px-5 py-4 flex justify-between items-center">
+                                <span class="text-sm font-bold text-slate-200"><i class="fa-solid fa-mobile-screen-button text-amber-500 mr-2"></i> Vista de tu Cliente (PWA)</span>
+                                <span class="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full font-bold">Menú en Vivo</span>
+                            </div>
+
+                            {/* Tracking Widget at top if active order */}
+                            {activeOrder && (
+                                <div class="bg-slate-955/65 border-b border-slate-800 p-5 relative overflow-hidden transition-all duration-300">
+                                    <div class="absolute top-0 left-0 h-1 bg-gradient-to-r from-amber-500 to-yellow-600" style={{ width: activeOrder.Estado === 'Nuevo' ? '25%' : activeOrder.Estado === 'Listo para Recolección' ? '50%' : activeOrder.Estado === 'En Ruta' ? '75%' : '100%' }}></div>
+                                    <div class="flex justify-between items-start mb-3">
+                                        <div>
+                                            <p class="text-[10px] uppercase font-black tracking-widest text-amber-500">SEGUIMIENTO EN VIVO</p>
+                                            <p class="text-sm font-black text-white mt-0.5">Orden: {activeOrder.ID_Orden}</p>
+                                        </div>
+                                        <span class="text-xs bg-amber-500/10 text-amber-500 px-3 py-1 rounded font-black uppercase">{activeOrder.Estado}</span>
+                                    </div>
+                                    <div class="flex gap-3 items-center text-sm mt-3 bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                                        <div class="text-2xl">
+                                            {activeOrder.Estado === 'Nuevo' ? "🍳" : activeOrder.Estado === 'Listo para Recolección' ? "📦" : activeOrder.Estado === 'En Ruta' ? "🚴" : "🎁"}
+                                        </div>
+                                        <p class="text-xs md:text-sm text-slate-300 font-semibold">
+                                            {activeOrder.Estado === 'Nuevo' && "La Trattoria está preparando tus platillos..."}
+                                            {activeOrder.Estado === 'Listo para Recolección' && "Pedido empaquetado. Esperando repartidor..."}
+                                            {activeOrder.Estado === 'En Ruta' && `¡Tu repartidor (${activeOrder.Repartidor}) ya va en camino!`}
+                                            {activeOrder.Estado === 'Entregado' && "¡Buen provecho! Tu pedido fue entregado con éxito."}
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Store Banner */}
+                            <div class="relative h-36 flex flex-col justify-end p-5 border-b border-slate-800">
+                                <img src={mockStore.FotoUrl} class="absolute inset-0 w-full h-full object-cover z-0" />
+                                <div class="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent z-10"></div>
+                                <div class="relative z-20">
+                                    <h3 class="text-lg md:text-xl font-black text-white">{mockStore.Nombre}</h3>
+                                    <p class="text-xs text-slate-300 mt-1">Horario: {mockStore.Horario}</p>
+                                </div>
+                            </div>
+
+                            {/* Products List inside phone container */}
+                            <div class="p-4 space-y-4 max-h-[350px] overflow-y-auto">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {mockProducts.map(p => (
+                                        <div key={p.ID_Producto} class="bg-slate-955 border border-slate-800 p-4 rounded-xl flex flex-col justify-between">
+                                            <div>
+                                                <div class="flex justify-between items-start">
+                                                    <span class="text-3xl p-2 bg-slate-900 border border-slate-800 rounded-lg w-12 h-12 flex items-center justify-center">{p.Imagen}</span>
+                                                    <span class="text-sm md:text-base font-black text-amber-500">${p.Precio}</span>
+                                                </div>
+                                                <h4 class="text-sm font-black text-white mt-3">{p.Nombre_Producto}</h4>
+                                                <p class="text-xs text-slate-400 mt-1.5 line-clamp-2">{p.Descripcion}</p>
+                                            </div>
+                                            <button 
+                                                onClick={() => addToCart(p)}
+                                                class="w-full mt-4 bg-slate-900 hover:bg-amber-500 hover:text-slate-950 text-slate-300 py-2.5 rounded-lg border border-slate-800 text-xs md:text-sm font-bold transition-all"
+                                            >
+                                                Agregar al Pedido
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Checkout / Cart Panel */}
+                            <div class="p-5 bg-slate-955/80 border-t border-slate-800 space-y-4">
+                                {Object.keys(cart).length === 0 ? (
+                                    <p class="text-xs md:text-sm text-slate-500 italic text-center py-4">Tu carrito de compras está vacío.</p>
+                                ) : (
+                                    <div class="space-y-4 text-xs md:text-sm">
+                                        <div class="divide-y divide-slate-800 max-h-28 overflow-y-auto pr-1">
+                                            {Object.values(cart).map(item => (
+                                                <div key={item.ID_Producto} class="py-2 flex justify-between items-center text-xs md:text-sm">
+                                                    <span class="text-slate-200 font-bold">{item.qty}x {item.Nombre_Producto}</span>
+                                                    <div class="flex items-center gap-3">
+                                                        <button onClick={() => removeFromCart(item.ID_Producto)} class="bg-slate-900 p-1.5 rounded text-xs text-slate-400 border border-slate-800"><i class="fa-solid fa-minus"></i></button>
+                                                        <button onClick={() => addToCart(item)} class="bg-slate-900 p-1.5 rounded text-xs text-slate-400 border border-slate-800"><i class="fa-solid fa-plus"></i></button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        
+                                        {/* Address details */}
+                                        <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl text-xs md:text-sm space-y-2 text-slate-400">
+                                            <p class="font-bold text-white uppercase text-[10px] tracking-wider text-amber-500">Dirección de Entrega</p>
+                                            <p class="font-black text-slate-200">{clientProfile.Nombre}</p>
+                                            <p>{clientProfile.Calle} #{clientProfile.Numero}, Col. {clientProfile.Colonia}</p>
+                                        </div>
+
+                                        <div class="flex justify-between items-center text-xs md:text-sm font-mono text-slate-400">
+                                            <span>Subtotal: ${cartTotal}</span>
+                                            <span>Envío: ${deliveryFee}</span>
+                                            <span class="font-bold text-amber-500 text-sm md:text-base">Total: ${finalTotal.toFixed(0)} MXN</span>
+                                        </div>
+
+                                        <button 
+                                            onClick={handlePlaceOrder}
+                                            class="w-full bg-gradient-to-r from-amber-500 to-yellow-600 text-slate-950 font-black py-3 rounded-xl shadow-lg transition text-xs md:text-sm"
+                                        >
+                                            Confirmar Pedido Digital
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* COLUMN 2: MERCHANT OR RIDER PANEL (💻 / 🚴) */}
+                        <div class="lg:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col overflow-hidden shadow-2xl">
+                            
+                            {/* Toggle Tabs */}
+                            <div class="bg-slate-955 border-b border-slate-800 flex text-xs md:text-sm font-bold p-1">
+                                <button 
+                                    onClick={() => setRightTab('comercio')}
+                                    class={`w-1/2 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 ${rightTab === 'comercio' ? 'bg-amber-500 text-slate-955 font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <i class="fa-solid fa-store"></i> 💻 Mi Comercio (SaaS)
+                                </button>
+                                <button 
+                                    onClick={() => setRightTab('repartidor')}
+                                    class={`w-1/2 py-3.5 rounded-xl transition-all flex items-center justify-center gap-2 ${rightTab === 'repartidor' ? 'bg-amber-500 text-slate-955 font-black' : 'text-slate-400 hover:text-slate-200'}`}
+                                >
+                                    <i class="fa-solid fa-motorcycle"></i> 🚴 Mi Repartidor (DaaS)
+                                </button>
+                            </div>
+
+                            {/* TAB VIEW: COMERCIO (SaaS) */}
+                            {rightTab === 'comercio' && (
+                                <div class="p-5 flex-grow flex flex-col justify-between overflow-y-auto max-h-[600px] space-y-5">
+                                    <div>
+                                        <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-bell-concierge text-amber-500"></i> Consola del Comercio</h3>
+                                        <p class="text-xs md:text-sm text-slate-400 mt-1">Aquí la pizzería administra, prepara y despacha los pedidos.</p>
+                                    </div>
+
+                                    {/* Financial stats inside demo console */}
+                                    <div class="grid grid-cols-2 gap-4 text-xs md:text-sm font-semibold">
+                                        <div class="bg-slate-955 border border-slate-800 p-4 rounded-xl text-center">
+                                            <span class="text-[10px] text-slate-400 uppercase font-black">Ventas de Hoy</span>
+                                            <p class="text-lg font-black text-amber-500 mt-1">${orders.reduce((sum, o) => sum + o.Total, 0)} MXN</p>
+                                        </div>
+                                        <div class="bg-slate-955 border border-slate-800 p-4 rounded-xl text-center">
+                                            <span class="text-[10px] text-slate-400 uppercase font-black">Pedidos</span>
+                                            <p class="text-lg font-black text-emerald-400 mt-1">{orders.length} órdenes</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Merchant Orders List */}
+                                    <div class="space-y-4 flex-grow">
+                                        <p class="text-xs font-black uppercase text-amber-500 tracking-wider">Historial de Pedidos Recibidos:</p>
+                                        
+                                        {orders.map(o => (
+                                            <div key={o.ID_Orden} class={`bg-slate-955 border border-slate-800 p-5 rounded-xl space-y-4 relative overflow-hidden ${o.Estado === 'Nuevo' ? 'border-amber-500/40 bg-amber-500/5' : ''}`}>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm font-mono font-black text-amber-500">{o.ID_Orden}</span>
+                                                    <span class={`text-[10px] font-black px-2.5 py-1 rounded ${o.Estado === 'Nuevo' ? 'bg-amber-500 text-slate-955' : o.Estado === 'Listo para Recolección' ? 'bg-blue-600 text-white' : o.Estado === 'En Ruta' ? 'bg-purple-600 text-white' : 'bg-emerald-600 text-white'}`}>{o.Estado}</span>
+                                                </div>
+                                                <div class="text-xs md:text-sm space-y-2 text-slate-400">
+                                                    <p class="text-slate-200 font-bold">{o.Cliente}</p>
+                                                    <p><i class="fa-solid fa-location-dot text-amber-500 mr-2"></i> {o.Direccion}</p>
+                                                    <p><i class="fa-solid fa-receipt text-slate-500 mr-2"></i> {o.Detalle_Productos}</p>
+                                                    <p class="font-bold text-white text-sm mt-2">Total a cobrar: ${o.Total} MXN ({o.Metodo_Pago})</p>
+                                                </div>
+
+                                                {/* Action Button inside Merchant panel */}
+                                                <div class="text-right">
+                                                    {o.Estado === "Nuevo" && (
+                                                        <button 
+                                                            onClick={() => advanceOrderState(o.ID_Orden, "Listo para Recolección")}
+                                                            class="bg-amber-500 hover:bg-amber-600 text-slate-955 font-black text-xs md:text-sm px-5 py-2 rounded-lg shadow transition"
+                                                        >
+                                                            Listo para Recolección
+                                                        </button>
+                                                    )}
+                                                    {o.Estado === "Listo para Recolección" && (
+                                                        <span class="text-xs md:text-sm text-amber-500 font-bold italic animate-pulse">Esperando repartidor...</span>
+                                                    )}
+                                                    {o.Estado === "En Ruta" && (
+                                                        <span class="text-xs md:text-sm text-slate-400 italic">Repartidor en ruta...</span>
+                                                    )}
+                                                    {o.Estado === "Entregado" && (
+                                                        <span class="text-xs md:text-sm text-emerald-400 font-black"><i class="fa-solid fa-circle-check"></i> Entregado con éxito</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* TAB VIEW: REPARTIDOR (DaaS) */}
+                            {rightTab === 'repartidor' && (
+                                <div class="p-5 flex-grow flex flex-col justify-between overflow-y-auto max-h-[600px] space-y-5">
+                                    <div>
+                                        <h3 class="text-base font-black text-white flex items-center gap-2"><i class="fa-solid fa-motorcycle text-amber-500"></i> App de Repartidor</h3>
+                                        <p class="text-xs md:text-sm text-slate-400 mt-1">Simulación de la consola para motoristas independientes de ZeloxCloud.</p>
+                                    </div>
+
+                                    {/* Deliveries list */}
+                                    <div class="space-y-4 flex-grow">
+                                        <p class="text-xs font-black uppercase text-amber-500 tracking-wider">Pedidos Listos para Entregar:</p>
+                                        
+                                        {orders.filter(o => o.Estado === "Listo para Recolección" || (o.Estado === "En Ruta" && o.ID_Repartidor === "rep-1")).length === 0 ? (
+                                            <div class="p-8 text-center text-slate-500 italic text-xs md:text-sm bg-slate-955 rounded-xl border border-slate-800">
+                                                No hay entregas pendientes. Despacha un pedido como comercio para activarlas.
+                                            </div>
+                                        ) : (
+                                            orders.filter(o => o.Estado === "Listo para Recolección" || (o.Estado === "En Ruta" && o.ID_Repartidor === "rep-1")).map(o => (
+                                                <div key={o.ID_Orden} class="bg-slate-955 border border-slate-800 p-5 rounded-xl space-y-4 relative overflow-hidden">
+                                                    <div class="flex justify-between items-center">
+                                                        <span class="text-sm font-mono font-black text-amber-500">{o.ID_Orden}</span>
+                                                        <span class="text-[10px] bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full font-bold">{o.Estado}</span>
+                                                    </div>
+                                                    <div class="text-xs md:text-sm space-y-2 text-slate-400">
+                                                        <p><i class="fa-solid fa-store text-amber-500 mr-2"></i> Origen: <span class="text-slate-200 font-bold">{mockStore.Nombre}</span></p>
+                                                        <p><i class="fa-solid fa-location-dot text-amber-500 mr-2"></i> Destino: <span class="text-slate-200 font-bold">{o.Direccion}</span></p>
+                                                        <p><i class="fa-solid fa-wallet text-slate-500 mr-2"></i> Ganancia esperada: <span class="text-emerald-400 font-black">+${o.Envio + o.Propina} MXN</span></p>
+                                                    </div>
+
+                                                    {/* Rider actions */}
+                                                    <div class="text-right">
+                                                        {o.Estado === "Listo para Recolección" && (
+                                                            <button 
+                                                                onClick={() => claimOrder(o.ID_Orden)}
+                                                                class="bg-amber-500 hover:bg-amber-600 text-slate-955 font-black text-xs md:text-sm px-5 py-2.5 rounded-lg shadow transition"
+                                                            >
+                                                                Aceptar Entrega
+                                                            </button>
+                                                        )}
+                                                        {o.Estado === "En Ruta" && (
+                                                            <button 
+                                                                onClick={() => deliverOrder(o.ID_Orden)}
+                                                                class="bg-emerald-500 hover:bg-emerald-600 text-slate-955 font-black text-xs md:text-sm px-5 py-2.5 rounded-lg shadow transition"
+                                                            >
+                                                                Confirmar Entrega
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                        </div>
+                    </main>
+
+                    {/* Footer */}
+                    <footer class="border-t border-slate-900 py-5 text-center text-xs text-slate-500 bg-slate-955/60 relative z-10">
+                        <p>© 2026 ZeloxCloud Local Hub. Desarrollado y administrado por Grupo DFC.</p>
+                    </footer>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<ZeloxCloudSimulator />);
+    </script>
+</body>
+</html>
