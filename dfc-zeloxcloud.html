@@ -4,6 +4,26 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DFC · ZeloxCloud — Contabilidad estratégica. Tecnología que vende.</title>
+<meta name="description" content="Despacho fiscal-contable y ecosistema B2B de marketing con IA, pedidos digitales y reparto compartido para comercios locales.">
+
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="DFC · ZeloxCloud">
+<meta property="og:url" content="https://zeloxcloud.com/">
+<meta property="og:title" content="DFC · ZeloxCloud — Contabilidad estratégica. Tecnología que vende.">
+<meta property="og:description" content="Despacho fiscal-contable y ecosistema B2B de marketing con IA, pedidos digitales y reparto compartido para comercios locales.">
+<meta property="og:image" content="https://zeloxcloud.com/og-image.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_MX">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="DFC · ZeloxCloud — Contabilidad estratégica. Tecnología que vende.">
+<meta name="twitter:description" content="Despacho fiscal-contable y ecosistema B2B de marketing con IA, pedidos digitales y reparto compartido para comercios locales.">
+<meta name="twitter:image" content="https://zeloxcloud.com/og-image.jpg">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
@@ -361,7 +381,7 @@
       <a href="#despacho">Despacho</a>
       <a href="#zeloxcloud">ZeloxCloud</a>
       <a href="#como-funciona">Cómo funciona</a>
-      <a href="hub.html" class="nav-cta">Ingresar al Hub</a>
+      <a href="#contacto" class="nav-cta">Agenda una demo</a>
     </div>
   </nav>
 </header>
@@ -373,7 +393,7 @@
       <h1>Contabilidad estratégica.<br><span class="accent">Tecnología</span> que vende.</h1>
       <p class="lede">DFC es un despacho fiscal-contable que además opera ZeloxCloud: un ecosistema con inteligencia artificial, pedidos digitales y una flota de reparto compartida para que los comercios locales vendan más sin perder margen.</p>
       <div class="cta-row">
-        <a href="hub.html" class="btn btn-primary">Ingresar al Hub ➔</a>
+        <a href="#contacto" class="btn btn-primary">Agenda una demo →</a>
         <a href="#como-funciona" class="btn btn-ghost">Ver cómo funciona</a>
       </div>
     </div>
@@ -528,14 +548,17 @@
         </a>
       </div>
     </div>
-    <form class="form-card reveal" onsubmit="return false;">
+    <form class="form-card reveal" action="https://formsubmit.co/juan.guerrero@zeloxcloud.com" method="POST">
+      <input type="hidden" name="_subject" value="Nueva solicitud de propuesta — DFC · ZeloxCloud">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_captcha" value="false">
       <div class="field">
         <label>Nombre del negocio</label>
-        <input type="text" placeholder="Ej. Taquería Don Beto">
+        <input type="text" name="Nombre del negocio" placeholder="Ej. Taquería Don Beto" required>
       </div>
       <div class="field">
         <label>Interés</label>
-        <select>
+        <select name="Interés">
           <option>Despacho Fiscal Contable</option>
           <option>ZeloxCloud — Marketing con IA</option>
           <option>ZeloxCloud — Pedidos y reparto</option>
@@ -544,14 +567,14 @@
       </div>
       <div class="field">
         <label>Teléfono o WhatsApp</label>
-        <input type="tel" placeholder="+52 ...">
+        <input type="tel" name="Teléfono o WhatsApp" placeholder="+52 ..." required>
       </div>
       <div class="field">
         <label>Cuéntanos brevemente tu caso</label>
-        <textarea placeholder="¿Cuántos pedidos manejas al mes? ¿Ya usas alguna app de reparto?"></textarea>
+        <textarea name="Mensaje" placeholder="¿Cuántos pedidos manejas al mes? ¿Ya usas alguna app de reparto?"></textarea>
       </div>
       <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Solicitar propuesta →</button>
-      <div class="form-note">Formulario de demostración — conéctalo a tu correo o CRM para recibir solicitudes reales.</div>
+      <div class="form-note">Al enviar, la información llega directo a tu correo.</div>
     </form>
   </div>
 </section>
